@@ -6,7 +6,7 @@ on:
       - "master"
 
 env:
-  COMPONENT: int-service
+  COMPONENT: int-mastodon
   VERSION: latest
   CHART_VERSION: 0.0.0
 

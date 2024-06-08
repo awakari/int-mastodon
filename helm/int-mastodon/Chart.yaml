@@ -1,6 +1,6 @@
 apiVersion: v2
 name: int-mastodon
-description: A Helm chart for Awakari int-service
+description: A Helm chart for Awakari int-mastodon
 
 # A chart can be either an 'application' or a 'library' chart.
 #
