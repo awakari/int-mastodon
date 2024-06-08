@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package awakari.int.activitypub;
+
+option go_package = "./api/grpc/int-activitypub";
+
+service Service {
+
+  // Create means Follow the specified actor
+  rpc Create(CreateRequest) returns (CreateResponse);
+}
+
+message CreateRequest {
+  // Actor address, e.g. "https://mastodon.social/@Mastodon"
+  string addr = 1;
+  string groupId = 2;
+  string userId = 3;
+  string subId = 4;
+  string term = 5;
+}
+
+message CreateResponse {
+  // Actor URL, e.g. "https://mastodon.social/users/Mastodon"
+  string url = 1;
+}

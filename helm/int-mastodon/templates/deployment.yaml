@@ -1,0 +1,98 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "int-mastodon.fullname" . }}
+  labels:
+    {{- include "int-mastodon.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "int-mastodon.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "int-mastodon.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "int-mastodon.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          env:
+            - name: API_PORT
+              value: "{{ .Values.service.port }}"
+            - name: API_WRITER_BACKOFF
+              value: "{{ .Values.api.writer.backoff }}"
+            - name: API_WRITER_BATCH_SIZE
+              value: "{{ .Values.api.writer.batchSize }}"
+            - name: API_WRITER_URI
+              value: "{{ .Values.api.writer.uri }}"
+            - name: API_ACTIVITYPUB_URI
+              value: "{{ .Values.api.activitypub.uri }}"
+            - name: LOG_LEVEL
+              value: "{{ .Values.log.level }}"
+            - name: API_MASTODON_ENDPOINT_SEARCH
+              value: "{{ .Values.mastodon.endpoint.search }}"
+            - name: API_MASTODON_ENDPOINT_STREAM
+              value: "{{ .Values.mastodon.endpoint.stream }}"
+            - name: API_MASTODON_CLIENT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ include "int-mastodon.fullname" . }}-client"
+                  key: key
+            - name: API_MASTODON_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ include "int-mastodon.fullname" . }}-client"
+                  key: secret
+            - name: API_MASTODON_CLIENT_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ include "int-mastodon.fullname" . }}-client"
+                  key: token
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: grpc
+              containerPort: {{ .Values.service.port }}
+              protocol: TCP
+          livenessProbe:
+            grpc:
+              port: {{ .Values.service.port }}
+          readinessProbe:
+            grpc:
+              port: {{ .Values.service.port }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: {{ include "int-mastodon.name" . }}

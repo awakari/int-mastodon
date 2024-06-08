@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package awakari.int.mastodon;
+
+option go_package = "./api/grpc";
+
+service Service {
+
+  rpc SearchAndAdd(SearchAndAddRequest) returns (SearchAndAddResponse);
+}
+
+message SearchAndAddRequest {
+  string q = 1;
+  uint32 limit = 2;
+  string subId = 3;
+  string groupId = 4;
+}
+
+message SearchAndAddResponse {
+  uint32 n = 1;
+}
