@@ -91,6 +91,8 @@ func (svc service) getWriterAndPublish(ctx context.Context, evt *pb.CloudEvent, 
 			fallthrough
 		case errors.Is(err, resolver.ErrUnavailable):
 			fallthrough
+		case errors.Is(err, resolver.ErrInternal):
+			fallthrough
 		case errors.Is(err, io.EOF):
 			k := writerKey(groupId, userId)
 			svc.cacheLock.Lock()
@@ -122,7 +124,6 @@ func (svc service) publish(w model.Writer[*pb.CloudEvent], evt *pb.CloudEvent) (
 	if err != nil {
 		switch {
 		case errors.Is(err, limits.ErrReached):
-			// this error may be due to internal gRPC status "resource exhausted", reopen the writer 1st
 			fallthrough
 		case errors.Is(err, limits.ErrUnavailable):
 			fallthrough
@@ -131,7 +132,7 @@ func (svc service) publish(w model.Writer[*pb.CloudEvent], evt *pb.CloudEvent) (
 		case errors.Is(err, resolver.ErrUnavailable):
 			fallthrough
 		case errors.Is(err, resolver.ErrInternal):
-			// avoid retrying this and above cases before reopening the writer
+			fmt.Printf("failed to write event %s, cause %s, going to reopen the writer\n", evt.Id, err)
 		default:
 			err = svc.retryBackoff(func() error {
 				return svc.tryPublish(w, evt)
