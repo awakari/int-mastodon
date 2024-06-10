@@ -23,7 +23,7 @@ import (
 
 type Service interface {
 	SearchAndAdd(ctx context.Context, subId, groupId, q string, limit uint32) (n uint32, err error)
-	ConsumeLiveStreamPublic(ctx context.Context) (err error)
+	HandleLiveStream(ctx context.Context) (err error)
 }
 
 type mastodon struct {
@@ -35,8 +35,8 @@ type mastodon struct {
 }
 
 const limitRespBodyLen = 1_048_576
-const minFollowersCount = 10
-const minPostCount = 10
+const minFollowersCount = 100
+const minPostCount = 1000
 const typeCloudEvent = "com.awakari.mastodon.v1"
 const groupIdDefault = "default"
 
@@ -104,7 +104,7 @@ func (m mastodon) SearchAndAdd(ctx context.Context, subId, groupId, q string, li
 	return
 }
 
-func (m mastodon) ConsumeLiveStreamPublic(ctx context.Context) (err error) {
+func (m mastodon) HandleLiveStream(ctx context.Context) (err error) {
 	clientSse := sse.NewClient(m.cfg.Endpoint.Stream)
 	clientSse.Headers["Authorization"] = "Bearer " + m.cfg.Client.Token
 	clientSse.Headers["User-Agent"] = m.userAgent
@@ -115,7 +115,7 @@ func (m mastodon) ConsumeLiveStreamPublic(ctx context.Context) (err error) {
 		for {
 			select {
 			case ssEvt := <-chSsEvts:
-				m.consumeLiveStreamEvent(ssEvt)
+				m.handleLiveStreamEvent(ctx, ssEvt)
 			case <-ctx.Done():
 				err = ctx.Err()
 			case <-time.After(m.cfg.StreamTimeoutMax):
@@ -129,33 +129,63 @@ func (m mastodon) ConsumeLiveStreamPublic(ctx context.Context) (err error) {
 	return
 }
 
-func (m mastodon) consumeLiveStreamEvent(ssEvt *sse.Event) {
+func (m mastodon) handleLiveStreamEvent(ctx context.Context, ssEvt *sse.Event) {
 	if "update" == string(ssEvt.Event) {
+
 		var st model.Status
 		err := json.Unmarshal(ssEvt.Data, &st)
 		if err != nil {
 			fmt.Printf("failed to unmarshal the live stream event data: %s\nerror: %s\n", string(ssEvt.Data), err)
 		}
+
+		// do not proceed if either: message is sensitive, message is not public, account is not public, noindex present
 		if st.Sensitive {
 			return
 		}
 		if st.Visibility != "public" {
 			return
 		}
-		evtAwk, userId := m.convertStatus(st)
-		err = m.w.Write(context.TODO(), evtAwk, groupIdDefault, userId)
-		if err != nil {
-			fmt.Printf("failed to submit the live stream event, sse id=%s, awk id=%s, err=%s\n", string(ssEvt.ID), evtAwk.Id, err)
+		acc := st.Account
+		if !acc.Discoverable {
+			return
+		}
+		if acc.Noindex {
+			return
+		}
+		if acc.FollowersCount < minFollowersCount {
+			return
+		}
+		if acc.StatusesCount < minPostCount {
+			return
+		}
+
+		addr := acc.Uri
+		if addr == "" {
+			addr = acc.Url
+		}
+		switch acc.Locked {
+		case true:
+			// able to accept the follow request manually
+			if addr == "" {
+				addr = acc.Acct
+			}
+			_ = m.svcAp.Create(ctx, addr, groupIdDefault, addr, "", "")
+		default:
+			// do not consume the message if account doesn't allow this explicitly
+			if !acc.Indexable {
+				return
+			}
+			evtAwk := m.convertStatus(st, addr)
+			err = m.w.Write(context.TODO(), evtAwk, groupIdDefault, addr)
+			if err != nil {
+				fmt.Printf("failed to submit the live stream event, id=%s, src=%s, err=%s\n", evtAwk.Id, addr, err)
+			}
 		}
 	}
 	return
 }
 
-func (m mastodon) convertStatus(st model.Status) (evtAwk *pb.CloudEvent, src string) {
-	src = st.Account.Uri
-	if src == "" {
-		src = st.Account.Url
-	}
+func (m mastodon) convertStatus(st model.Status, src string) (evtAwk *pb.CloudEvent) {
 	evtAwk = &pb.CloudEvent{
 		Id:          uuid.NewString(),
 		Source:      src,

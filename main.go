@@ -58,7 +58,7 @@ func main() {
 	//
 	go func() {
 		for {
-			err = svc.ConsumeLiveStreamPublic(context.Background())
+			err = svc.HandleLiveStream(context.Background())
 			if err != nil {
 				panic(err)
 			}

@@ -34,7 +34,11 @@ type MastodonConfig struct {
 		Search string `envconfig:"API_MASTODON_ENDPOINT_SEARCH" default:"https://mastodon.social/api/v2/search" required:"true"`
 		Stream string `envconfig:"API_MASTODON_ENDPOINT_STREAM" default:"https://streaming.mastodon.social/api/v1/streaming/public?remote=false&only_media=false" required:"true"`
 	}
-	StreamTimeoutMax time.Duration `envconfig:"API_MASTODON_STREAM_TIMEOUT_MAX" default:"1m" required:"true"`
+	StreamTimeoutMax time.Duration `envconfig:"API_MASTODON_STREAM_TIMEOUT_MAX" default:"5m" required:"true"`
+	CountMin         struct {
+		Followers uint32 `envconfig:"API_MASTODON_COUNT_MIN_FOLLOWERS" default:"100" required:"true"`
+		Posts     uint32 `envconfig:"API_MASTODON_COUNT_MIN_POSTS" default:"1000" required:"true"`
+	}
 }
 
 func NewConfigFromEnv() (cfg Config, err error) {

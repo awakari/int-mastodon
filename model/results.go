@@ -24,11 +24,13 @@ type Account struct {
 	Discoverable   bool   `json:"discoverable"`
 	DisplayName    string `json:"display_name"`
 	Indexable      bool   `json:"indexable"`
+	Locked         bool   `json:"locked"`
+	Noindex        bool   `json:"noindex"`
 	Note           string `json:"note"`
 	Uri            string `json:"uri"`
 	Url            string `json:"url"`
-	FollowersCount int    `json:"followers_count"`
-	StatusesCount  int    `json:"statuses_count"`
+	FollowersCount uint32 `json:"followers_count"`
+	StatusesCount  uint32 `json:"statuses_count"`
 }
 
 type Tag struct {

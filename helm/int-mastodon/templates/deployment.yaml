@@ -46,6 +46,10 @@ spec:
               value: "{{ .Values.mastodon.endpoint.search }}"
             - name: API_MASTODON_ENDPOINT_STREAM
               value: "{{ .Values.mastodon.endpoint.stream }}"
+            - name: API_MASTODON_COUNT_MIN_FOLLOWERS
+              value: "{{ .Values.mastodon.count.min.followers }}"
+            - name: API_MASTODON_COUNT_MIN_POSTS
+              value: "{{ .Values.mastodon.count.min.posts }}"
             - name: API_MASTODON_CLIENT_KEY
               valueFrom:
                 secretKeyRef:
