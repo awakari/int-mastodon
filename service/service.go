@@ -35,8 +35,6 @@ type mastodon struct {
 }
 
 const limitRespBodyLen = 1_048_576
-const minFollowersCount = 100
-const minPostCount = 1000
 const typeCloudEvent = "com.awakari.mastodon.v1"
 const groupIdDefault = "default"
 
@@ -82,10 +80,10 @@ func (m mastodon) SearchAndAdd(ctx context.Context, subId, groupId, q string, li
 				if s.Sensitive {
 					errReqFollow = fmt.Errorf("found account %s skip due to sensitive flag", s.Account.Uri)
 				}
-				if errReqFollow == nil && s.Account.FollowersCount < minFollowersCount {
+				if errReqFollow == nil && s.Account.FollowersCount < m.cfg.CountMin.Followers {
 					errReqFollow = fmt.Errorf("found account %s skip due low followers count %d", s.Account.Uri, s.Account.FollowersCount)
 				}
-				if errReqFollow == nil && s.Account.StatusesCount < minPostCount {
+				if errReqFollow == nil && s.Account.StatusesCount < m.cfg.CountMin.Followers {
 					errReqFollow = fmt.Errorf("found account %s skip due low post count %d", s.Account.Uri, s.Account.StatusesCount)
 				}
 				if errReqFollow == nil {
@@ -152,10 +150,11 @@ func (m mastodon) handleLiveStreamEvent(ctx context.Context, ssEvt *sse.Event) {
 		if acc.Noindex {
 			return
 		}
-		if acc.FollowersCount < minFollowersCount {
+
+		if acc.FollowersCount < m.cfg.CountMin.Followers {
 			return
 		}
-		if acc.StatusesCount < minPostCount {
+		if acc.StatusesCount < m.cfg.CountMin.Posts {
 			return
 		}
 
@@ -163,18 +162,15 @@ func (m mastodon) handleLiveStreamEvent(ctx context.Context, ssEvt *sse.Event) {
 		if addr == "" {
 			addr = acc.Url
 		}
-		switch acc.Locked {
-		case true:
+		switch {
+		case acc.Locked:
 			// able to accept the follow request manually
 			if addr == "" {
 				addr = acc.Acct
 			}
 			_ = m.svcAp.Create(ctx, addr, groupIdDefault, addr, "", "")
-		default:
-			// do not consume the message if account doesn't allow this explicitly
-			if !acc.Indexable {
-				return
-			}
+		case acc.Indexable:
+			// account allows explicitly to consume their posts
 			evtAwk := m.convertStatus(st, addr)
 			err = m.w.Write(context.TODO(), evtAwk, groupIdDefault, addr)
 			if err != nil {
