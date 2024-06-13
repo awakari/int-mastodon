@@ -136,7 +136,7 @@ func (m mastodon) handleLiveStreamEvent(ctx context.Context, ssEvt *sse.Event) {
 			fmt.Printf("failed to unmarshal the live stream event data: %s\nerror: %s\n", string(ssEvt.Data), err)
 		}
 
-		// do not proceed if either: message is sensitive, message is not public, account is not public, noindex present
+		// do not proceed if either of below conditions is true
 		if st.Sensitive {
 			return
 		}
