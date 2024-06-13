@@ -37,6 +37,7 @@ type mastodon struct {
 const limitRespBodyLen = 1_048_576
 const typeCloudEvent = "com.awakari.mastodon.v1"
 const groupIdDefault = "default"
+const tagNoBot = "#nobot"
 
 func NewService(clientHttp *http.Client, userAgent string, cfgMastodon config.MastodonConfig, svcAp ap.Service, w writer.Service) Service {
 	return mastodon{
@@ -80,6 +81,22 @@ func (m mastodon) SearchAndAdd(ctx context.Context, subId, groupId, q string, li
 				if s.Sensitive {
 					errReqFollow = fmt.Errorf("found account %s skip due to sensitive flag", s.Account.Uri)
 				}
+				acc := s.Account
+				if !acc.Discoverable {
+					errReqFollow = fmt.Errorf("found account %s skip due to no explicit discoverable flag set", s.Account.Uri)
+				}
+				if !acc.Indexable {
+					errReqFollow = fmt.Errorf("found account %s skip due to no explicit indexable flag set", s.Account.Uri)
+				}
+				if acc.Noindex {
+					errReqFollow = fmt.Errorf("found account %s skip due to noindex flag", s.Account.Uri)
+				}
+				for _, t := range acc.Tags {
+					if strings.ToLower(t.Name) == tagNoBot {
+						errReqFollow = fmt.Errorf("found account %s skip due to %s tag", s.Account.Uri, tagNoBot)
+						break
+					}
+				}
 				if errReqFollow == nil && s.Account.FollowersCount < m.cfg.CountMin.Followers {
 					errReqFollow = fmt.Errorf("found account %s skip due low followers count %d", s.Account.Uri, s.Account.FollowersCount)
 				}
@@ -87,7 +104,7 @@ func (m mastodon) SearchAndAdd(ctx context.Context, subId, groupId, q string, li
 					errReqFollow = fmt.Errorf("found account %s skip due low post count %d", s.Account.Uri, s.Account.StatusesCount)
 				}
 				if errReqFollow == nil {
-					errReqFollow = m.svcAp.Create(ctx, s.Account.Uri, groupId, "", subId, q)
+					errReqFollow = m.svcAp.Create(ctx, acc.Uri, groupId, "", subId, q)
 				}
 				if errReqFollow == nil {
 					n++
@@ -149,6 +166,16 @@ func (m mastodon) handleLiveStreamEvent(ctx context.Context, ssEvt *sse.Event) {
 		}
 		if acc.Noindex {
 			return
+		}
+		for _, t := range st.Tags {
+			if strings.ToLower(t.Name) == tagNoBot {
+				return
+			}
+		}
+		for _, t := range acc.Tags {
+			if strings.ToLower(t.Name) == tagNoBot {
+				return
+			}
 		}
 
 		if acc.FollowersCount < m.cfg.CountMin.Followers {

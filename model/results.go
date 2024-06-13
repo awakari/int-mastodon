@@ -31,6 +31,7 @@ type Account struct {
 	Url            string `json:"url"`
 	FollowersCount uint32 `json:"followers_count"`
 	StatusesCount  uint32 `json:"statuses_count"`
+	Tags           []Tag  `json:"tags"`
 }
 
 type Tag struct {
