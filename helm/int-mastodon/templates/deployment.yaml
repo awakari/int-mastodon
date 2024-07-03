@@ -40,6 +40,8 @@ spec:
               value: "{{ .Values.api.writer.uri }}"
             - name: API_ACTIVITYPUB_URI
               value: "{{ .Values.api.activitypub.uri }}"
+            - name: API_EVENT_TYPE
+              value: "{{ .Values.api.event.type }}"
             - name: LOG_LEVEL
               value: "{{ .Values.log.level }}"
             - name: API_MASTODON_ENDPOINT_SEARCH
@@ -50,6 +52,8 @@ spec:
               value: "{{ .Values.mastodon.count.min.followers }}"
             - name: API_MASTODON_COUNT_MIN_POSTS
               value: "{{ .Values.mastodon.count.min.posts }}"
+            - name: API_MASTODON_USER_AGENT
+              value: "{{ .Values.mastodon.userAgent }}"
             - name: API_MASTODON_CLIENT_KEY
               valueFrom:
                 secretKeyRef:
