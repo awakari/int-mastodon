@@ -93,7 +93,7 @@ func (m mastodon) SearchAndAdd(ctx context.Context, subId, groupId, q string, li
 				if !acc.Discoverable {
 					errReqFollow = fmt.Errorf("found account %s skip due to no explicit discoverable flag set", s.Account.Uri)
 				}
-				if !acc.Indexable {
+				if acc.Indexable != nil && !*acc.Indexable {
 					errReqFollow = fmt.Errorf("found account %s skip due to no explicit indexable flag set", s.Account.Uri)
 				}
 				if acc.Noindex {
@@ -204,7 +204,7 @@ func (m mastodon) handleLiveStreamEvent(ctx context.Context, ssEvt *sse.Event) {
 				addr = acc.Acct
 			}
 			_ = m.svcAp.Create(ctx, addr, groupIdDefault, addr, "", "")
-		case acc.Indexable:
+		case acc.Indexable == nil || *acc.Indexable == true:
 			// account allows explicitly to consume their posts
 			evtAwk := m.convertStatus(st, addr)
 			err = m.w.Write(context.TODO(), evtAwk, groupIdDefault, addr)

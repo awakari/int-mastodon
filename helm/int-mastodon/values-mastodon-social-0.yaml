@@ -3,8 +3,3 @@ api:
     type: "social.mastodon.0"
   writer:
     uri: "api:50051"
-mastodon:
-  count:
-    min:
-      followers: 1234
-      posts: 1234

@@ -90,8 +90,8 @@ log:
 mastodon:
   count:
     min:
-      followers: 200
-      posts: 2000
+      followers: 1234
+      posts: 1234
   endpoint:
     search: "https://mastodon.social/api/v2/search"
     stream: "https://streaming.mastodon.social/api/v1/streaming/public?remote=false&only_media=false"

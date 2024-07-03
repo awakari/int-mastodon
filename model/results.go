@@ -23,7 +23,7 @@ type Account struct {
 	Acct           string `json:"acct"`
 	Discoverable   bool   `json:"discoverable"`
 	DisplayName    string `json:"display_name"`
-	Indexable      bool   `json:"indexable"`
+	Indexable      *bool  `json:"indexable,omitempty"` // sometimes it's missing
 	Locked         bool   `json:"locked"`
 	Noindex        bool   `json:"noindex"`
 	Note           string `json:"note"`
