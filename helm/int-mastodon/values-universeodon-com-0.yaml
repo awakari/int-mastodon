@@ -1,0 +1,13 @@
+api:
+  event:
+    type: "com.universeodon.0"
+  writer:
+    uri: "api:50051"
+mastodon:
+  count:
+    min:
+      followers: 1234
+      posts: 1234
+  endpoint:
+    search: "https://universeodon.com/api/v2/search"
+    stream: "https://universeodon.com/api/v1/streaming/public?remote=false&only_media=false"

@@ -67,8 +67,14 @@ jobs:
             --region ${{ secrets.GKE_CLUSTER_REGION }} \
             --project ${{ secrets.GKE_PROJECT_ID }}
 
-      - name: Helm Upgrade
+      - name: Helm Upgrade 1
         run: |
           helm upgrade --install ${COMPONENT} helm/package/${COMPONENT}-0.0.0.tgz \
-            --values helm/int-mastodon/values-demo-0.yaml \
+            --values helm/int-mastodon/values-mastodon-social-0.yaml \
+            --set podAnnotations.commit=$(git rev-parse --short HEAD)
+
+      - name: Helm Upgrade 2
+        run: |
+          helm upgrade --install ${COMPONENT} helm/package/${COMPONENT}-0.0.0.tgz \
+            --values helm/int-mastodon/values-universeodon-com-0.yaml \
             --set podAnnotations.commit=$(git rev-parse --short HEAD)

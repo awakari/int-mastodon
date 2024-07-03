@@ -13,6 +13,9 @@ type Config struct {
 			BatchSize uint32        `envconfig:"API_WRITER_BATCH_SIZE" default:"16" required:"true"`
 			Uri       string        `envconfig:"API_WRITER_URI" default:"resolver:50051" required:"true"`
 		}
+		Event struct {
+			Type string `envconfig:"API_EVENT_TYPE" required:"true" default:"com.awakari.mastodon.v1"`
+		}
 		ActivityPub struct {
 			Uri string `envconfig:"API_ACTIVITYPUB_URI" default:"int-activitypub:50051" required:"true"`
 		}

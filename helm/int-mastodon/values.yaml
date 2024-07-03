@@ -78,6 +78,8 @@ affinity: {}
 api:
   activitypub:
     uri: "int-activitypub:50051"
+  event:
+    type: "com.awakari.mastodon.v1"
   writer:
     backoff: "10s"
     batchSize: 16

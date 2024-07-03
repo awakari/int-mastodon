@@ -53,7 +53,7 @@ func main() {
 	svcWriter = writer.NewLogging(svcWriter, log)
 	//
 	clientHttp := &http.Client{}
-	svc := service.NewService(clientHttp, cfg.Api.Mastodon.Client.UserAgent, cfg.Api.Mastodon, svcActivityPub, svcWriter)
+	svc := service.NewService(clientHttp, cfg.Api.Mastodon.Client.UserAgent, cfg.Api.Mastodon, svcActivityPub, svcWriter, cfg.Api.Event.Type)
 	svc = service.NewServiceLogging(svc, log)
 	//
 	go func() {

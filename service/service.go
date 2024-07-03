@@ -27,11 +27,12 @@ type Service interface {
 }
 
 type mastodon struct {
-	clientHttp *http.Client
-	userAgent  string
-	cfg        config.MastodonConfig
-	svcAp      ap.Service
-	w          writer.Service
+	clientHttp     *http.Client
+	userAgent      string
+	cfg            config.MastodonConfig
+	svcAp          ap.Service
+	w              writer.Service
+	typeCloudEvent string
 }
 
 const limitRespBodyLen = 1_048_576
@@ -39,13 +40,21 @@ const typeCloudEvent = "com.awakari.mastodon.v1"
 const groupIdDefault = "default"
 const tagNoBot = "#nobot"
 
-func NewService(clientHttp *http.Client, userAgent string, cfgMastodon config.MastodonConfig, svcAp ap.Service, w writer.Service) Service {
+func NewService(
+	clientHttp *http.Client,
+	userAgent string,
+	cfgMastodon config.MastodonConfig,
+	svcAp ap.Service,
+	w writer.Service,
+	typeCloudEvent string,
+) Service {
 	return mastodon{
-		clientHttp: clientHttp,
-		userAgent:  userAgent,
-		cfg:        cfgMastodon,
-		svcAp:      svcAp,
-		w:          w,
+		clientHttp:     clientHttp,
+		userAgent:      userAgent,
+		cfg:            cfgMastodon,
+		svcAp:          svcAp,
+		w:              w,
+		typeCloudEvent: typeCloudEvent,
 	}
 }
 

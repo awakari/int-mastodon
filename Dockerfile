@@ -1,4 +1,4 @@
-FROM golang:1.22.3-alpine3.20 AS builder
+FROM golang:1.22.4-alpine3.20 AS builder
 WORKDIR /go/src/int-mastodon
 COPY . .
 RUN \
