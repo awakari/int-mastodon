@@ -36,7 +36,6 @@ type mastodon struct {
 }
 
 const limitRespBodyLen = 1_048_576
-const typeCloudEvent = "com.awakari.mastodon.v1"
 const groupIdDefault = "default"
 const tagNoBot = "#nobot"
 
@@ -222,7 +221,7 @@ func (m mastodon) convertStatus(st model.Status, src string) (evtAwk *pb.CloudEv
 		Id:          uuid.NewString(),
 		Source:      src,
 		SpecVersion: model.CeSpecVersion,
-		Type:        typeCloudEvent,
+		Type:        m.typeCloudEvent,
 		Attributes: map[string]*pb.CloudEventAttributeValue{
 			model.CeKeySubject: {
 				Attr: &pb.CloudEventAttributeValue_CeString{

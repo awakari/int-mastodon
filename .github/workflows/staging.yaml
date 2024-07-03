@@ -78,3 +78,9 @@ jobs:
           helm upgrade --install ${COMPONENT}-universeodon-com helm/package/${COMPONENT}-0.0.0.tgz \
             --values helm/int-mastodon/values-universeodon-com-0.yaml \
             --set podAnnotations.commit=$(git rev-parse --short HEAD) \
+
+      - name: Helm Upgrade 3
+        run: |
+          helm upgrade --install ${COMPONENT}-mas-to helm/package/${COMPONENT}-0.0.0.tgz \
+            --values helm/int-mastodon/values-mas-to-0.yaml \
+            --set podAnnotations.commit=$(git rev-parse --short HEAD) \
