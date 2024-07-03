@@ -54,6 +54,8 @@ spec:
               value: "{{ .Values.mastodon.count.min.posts }}"
             - name: API_MASTODON_USER_AGENT
               value: "{{ .Values.mastodon.userAgent }}"
+            - name: API_MASTODON_STREAM_TIMEOUT_MAX
+              value: "{{ .Values.mastodon.stream.timeout }}"
             - name: API_MASTODON_CLIENT_KEY
               valueFrom:
                 secretKeyRef:

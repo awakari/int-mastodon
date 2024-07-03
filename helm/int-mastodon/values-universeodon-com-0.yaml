@@ -11,3 +11,5 @@ mastodon:
   endpoint:
     search: "https://universeodon.com/api/v2/search"
     stream: "https://universeodon.com/api/v1/streaming/public?remote=false&only_media=false"
+  stream:
+    timeout: "15m"

@@ -96,3 +96,5 @@ mastodon:
     search: "https://mastodon.social/api/v2/search"
     stream: "https://streaming.mastodon.social/api/v1/streaming/public?remote=false&only_media=false"
   userAgent: "Awakari"
+  stream:
+    timeout: "5m"
