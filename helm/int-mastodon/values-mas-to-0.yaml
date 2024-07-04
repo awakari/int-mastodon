@@ -1,6 +1,6 @@
 api:
   event:
-    type: "to.mas.0"
+    type: "com.awakari.mastodon.v1.i0"
   writer:
     uri: "api:50051"
 mastodon:
