@@ -90,3 +90,9 @@ jobs:
           helm upgrade --install ${COMPONENT}-infosec-exchange helm/package/${COMPONENT}-0.0.0.tgz \
             --values helm/int-mastodon/values-infosec-exchange-0.yaml \
             --set-string podAnnotations.commit=$(git rev-parse --short HEAD) \
+
+      - name: Helm Upgrade 5
+        run: |
+          helm upgrade --install ${COMPONENT}-mstdn-social helm/package/${COMPONENT}-0.0.0.tgz \
+            --values helm/int-mastodon/values-mstdn-socail-0.yaml \
+            --set-string podAnnotations.commit=$(git rev-parse --short HEAD) \
