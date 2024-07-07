@@ -67,26 +67,19 @@ jobs:
             --region ${{ secrets.GKE_CLUSTER_REGION }} \
             --project ${{ secrets.GKE_PROJECT_ID }}
 
-#      - name: Helm Upgrade 1
-#        run: |
-#          helm upgrade --install ${COMPONENT} helm/package/${COMPONENT}-0.0.0.tgz \
-#            --values helm/int-mastodon/values-mastodon-social-0.yaml \
-#            --set-string podAnnotations.commit=$(git rev-parse --short HEAD)
-#
-#      - name: Helm Upgrade 2
-#        run: |
-#          helm upgrade --install ${COMPONENT}-universeodon-com helm/package/${COMPONENT}-0.0.0.tgz \
-#            --values helm/int-mastodon/values-universeodon-com-0.yaml \
-#            --set-string podAnnotations.commit=$(git rev-parse --short HEAD) \
-#
-#
-#      - name: Helm Upgrade 3
-#        run: |
-#          helm upgrade --install ${COMPONENT}-infosec-exchange helm/package/${COMPONENT}-0.0.0.tgz \
-#            --values helm/int-mastodon/values-infosec-exchange-0.yaml \
-#            --set-string podAnnotations.commit=$(git rev-parse --short HEAD) \
+      - name: Helm Upgrade 1
+        run: |
+          helm upgrade --install ${COMPONENT} helm/package/${COMPONENT}-0.0.0.tgz \
+            --values helm/int-mastodon/values-mastodon-social-0.yaml \
+            --set-string podAnnotations.commit=$(git rev-parse --short HEAD)
 
-      - name: Helm Upgrade 4
+      - name: Helm Upgrade 2
+        run: |
+          helm upgrade --install ${COMPONENT}-infosec-exchange helm/package/${COMPONENT}-0.0.0.tgz \
+            --values helm/int-mastodon/values-infosec-exchange-0.yaml \
+            --set-string podAnnotations.commit=$(git rev-parse --short HEAD) \
+
+      - name: Helm Upgrade 3
         run: |
           helm upgrade --install ${COMPONENT}-mstdn-social helm/package/${COMPONENT}-0.0.0.tgz \
             --values helm/int-mastodon/values-mstdn-social-0.yaml \
