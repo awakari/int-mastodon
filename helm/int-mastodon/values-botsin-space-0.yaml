@@ -1,0 +1,11 @@
+api:
+  event:
+    type: "com.awakari.mastodon.v1.i5"
+  writer:
+    uri: "api:50051"
+mastodon:
+  endpoint:
+    search: "https://botsin.space/api/v2/search"
+    stream: "https://botsin.space/api/v1/streaming/public?remote=false&only_media=false"
+  stream:
+    timeout: "15m"

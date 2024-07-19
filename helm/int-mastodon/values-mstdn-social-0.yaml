@@ -8,4 +8,4 @@ mastodon:
     search: "https://mstdn.social/api/v2/search"
     stream: "https://mstdn.social/api/v1/streaming/public?remote=false&only_media=false"
   stream:
-    timeout: "5m"
+    timeout: "15m"
