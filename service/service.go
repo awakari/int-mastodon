@@ -10,8 +10,8 @@ import (
 	"github.com/awakari/int-mastodon/model"
 	"github.com/awakari/int-mastodon/service/writer"
 	"github.com/cloudevents/sdk-go/binding/format/protobuf/v2/pb"
-	"github.com/google/uuid"
 	"github.com/r3labs/sse/v2"
+	"github.com/segmentio/ksuid"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"io"
 	"net/http"
@@ -218,7 +218,7 @@ func (m mastodon) handleLiveStreamEvent(ctx context.Context, ssEvt *sse.Event) {
 
 func (m mastodon) convertStatus(st model.Status, src string) (evtAwk *pb.CloudEvent) {
 	evtAwk = &pb.CloudEvent{
-		Id:          uuid.NewString(),
+		Id:          ksuid.New().String(),
 		Source:      src,
 		SpecVersion: model.CeSpecVersion,
 		Type:        m.typeCloudEvent,
