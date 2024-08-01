@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"github.com/awakari/client-sdk-go/api"
 	apiGrpc "github.com/awakari/int-mastodon/api/grpc"
@@ -105,6 +104,7 @@ func main() {
 			cfg.Api.Queue.InterestsCreated.BatchSize,
 			evtTypeInterestsCreated,
 			cfg,
+			log,
 		)
 		if err != nil {
 			panic(err)
@@ -125,6 +125,7 @@ func main() {
 			cfg.Api.Queue.InterestsUpdated.BatchSize,
 			evtTypeInterestsUpdated,
 			cfg,
+			log,
 		)
 		if err != nil {
 			panic(err)
@@ -146,16 +147,14 @@ func consumeQueue(
 	batchSize uint32,
 	typ evtTypeInterests,
 	cfg config.Config,
+	log *slog.Logger,
 ) (err error) {
 	for {
-		err = svcQueue.ReceiveMessages(ctx, name, subj, batchSize, func(evts []*pb.CloudEvent) (err error) {
-			return consumeEvents(ctx, svc, evts, typ, cfg)
+		_ = svcQueue.ReceiveMessages(ctx, name, subj, batchSize, func(evts []*pb.CloudEvent) (err error) {
+			consumeEvents(ctx, svc, evts, typ, cfg, log)
+			return
 		})
-		if err != nil {
-			break
-		}
 	}
-	return
 }
 
 func consumeEvents(
@@ -164,7 +163,8 @@ func consumeEvents(
 	evts []*pb.CloudEvent,
 	typ evtTypeInterests,
 	cfg config.Config,
-) (err error) {
+	log *slog.Logger,
+) {
 	for _, evt := range evts {
 		interestId := evt.GetTextData()
 		var queries []string
@@ -176,26 +176,18 @@ func consumeEvents(
 			groupId = groupIdAttr.GetCeString()
 		}
 		if groupId == "" {
-			err = fmt.Errorf("interest %s creation: missing group id in the event", interestId)
+			log.Error(fmt.Sprintf("interest %s event type %d: empty group id, skipping", interestId, typ))
+			continue
 		}
-		if err == nil && len(queries) > 0 {
+		if len(queries) > 0 {
 			for _, q := range queries {
-				_, err = svc.SearchAndAdd(ctx, interestId, groupId, q, cfg.Api.Mastodon.Search.Limit, model.SearchTypeStatuses)
-				if err != nil {
-					break
-				}
+				_, _ = svc.SearchAndAdd(ctx, interestId, groupId, q, cfg.Api.Mastodon.Search.Limit, model.SearchTypeStatuses)
 			}
 		}
 		publicAttr, publicAttrPresent := evt.Attributes[ceKeyPublic]
 		if publicAttrPresent && publicAttr.GetCeBoolean() && typ == evtTypeInterestsCreated {
 			actor := interestId + "@" + cfg.Api.ActivityPub.Host
-			_, errFollow := svc.SearchAndAdd(ctx, interestId, groupId, actor, 1, model.SearchTypeAccounts)
-			if errFollow != nil {
-				err = errors.Join(err, errFollow)
-			}
-		}
-		if err != nil {
-			break
+			_, _ = svc.SearchAndAdd(ctx, interestId, groupId, actor, 1, model.SearchTypeAccounts)
 		}
 	}
 	return
