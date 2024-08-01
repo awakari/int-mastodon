@@ -5,7 +5,13 @@ api:
     uri: "api:50051"
 mastodon:
   endpoint:
+    accounts: "https://infosec.exchange/api/v1/accounts"
     search: "https://infosec.exchange/api/v2/search"
     stream: "https://streaming.infosec.exchange/api/v1/streaming/public?remote=false&only_media=false"
   stream:
     timeout: "15m"
+queue:
+  interestsCreated:
+    name: "int-mastodon-infosec-exchange"
+  interestsUpdated:
+    name: "int-mastodon-infosec-exchange"

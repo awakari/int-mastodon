@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"github.com/awakari/int-mastodon/model"
 	"log/slog"
 )
 
@@ -18,9 +19,9 @@ func NewServiceLogging(svc Service, log *slog.Logger) Service {
 	}
 }
 
-func (l logging) SearchAndAdd(ctx context.Context, subId, groupId, q string, limit uint32) (n uint32, err error) {
-	n, err = l.svc.SearchAndAdd(ctx, subId, groupId, q, limit)
-	l.log.Log(ctx, logLevel(err), fmt.Sprintf("service.SearchAndAdd(subId=%s, groupId=%s, q=%s): %d, %s", subId, groupId, q, n, err))
+func (l logging) SearchAndAdd(ctx context.Context, subId, groupId, q string, limit uint32, typ model.SearchType) (n uint32, err error) {
+	n, err = l.svc.SearchAndAdd(ctx, subId, groupId, q, limit, typ)
+	l.log.Log(ctx, logLevel(err), fmt.Sprintf("service.SearchAndAdd(subId=%s, groupId=%s, q=%s, typ=%s): %d, %s", subId, groupId, q, typ.String(), n, err))
 	return
 }
 

@@ -5,7 +5,13 @@ api:
     uri: "api:50051"
 mastodon:
   endpoint:
+    accounts: "https://botsin.space/api/v1/accounts"
     search: "https://botsin.space/api/v2/search"
     stream: "https://botsin.space/api/v1/streaming/public?remote=false&only_media=false"
   stream:
     timeout: "15m"
+queue:
+  interestsCreated:
+    name: "int-mastodon-botsin-space"
+  interestsUpdated:
+    name: "int-mastodon-botsin-space"

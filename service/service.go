@@ -22,7 +22,7 @@ import (
 )
 
 type Service interface {
-	SearchAndAdd(ctx context.Context, subId, groupId, q string, limit uint32) (n uint32, err error)
+	SearchAndAdd(ctx context.Context, interestId, groupId, q string, limit uint32, typ model.SearchType) (n uint32, err error)
 	HandleLiveStream(ctx context.Context) (err error)
 }
 
@@ -36,6 +36,7 @@ type mastodon struct {
 }
 
 const limitRespBodyLen = 1_048_576
+const limitRespBodyLenErr = 1_024
 const groupIdDefault = "default"
 const tagNoBot = "#nobot"
 
@@ -57,10 +58,10 @@ func NewService(
 	}
 }
 
-func (m mastodon) SearchAndAdd(ctx context.Context, subId, groupId, q string, limit uint32) (n uint32, err error) {
+func (m mastodon) SearchAndAdd(ctx context.Context, interestId, groupId, q string, limit uint32, typ model.SearchType) (n uint32, err error) {
 	var offset int
 	for n < limit {
-		reqQuery := "?q=" + url.QueryEscape(q) + "&type=statuses&offset=" + strconv.Itoa(offset) + "&limit=" + strconv.Itoa(int(limit))
+		reqQuery := "?q=" + url.QueryEscape(q) + "&type=" + typ.String() + "&resolve=true&offset=" + strconv.Itoa(offset) + "&limit=" + strconv.Itoa(int(limit))
 		var req *http.Request
 		req, err = http.NewRequestWithContext(ctx, http.MethodGet, m.cfg.Endpoint.Search+reqQuery, nil)
 		var resp *http.Response
@@ -73,55 +74,115 @@ func (m mastodon) SearchAndAdd(ctx context.Context, subId, groupId, q string, li
 		var data []byte
 		if err == nil {
 			data, err = io.ReadAll(io.LimitReader(resp.Body, limitRespBodyLen))
+			_ = resp.Body.Close()
 		}
 		var results model.Results
 		if err == nil {
 			err = json.Unmarshal(data, &results)
 		}
 		if err == nil {
-			countResults := len(results.Statuses)
-			if countResults == 0 {
-				break
-			}
-			offset += countResults
-			for _, s := range results.Statuses {
-				var errReqFollow error
-				if s.Sensitive {
-					errReqFollow = fmt.Errorf("found account %s skip due to sensitive flag", s.Account.Uri)
+			switch typ {
+			case model.SearchTypeStatuses:
+				countResults := len(results.Statuses)
+				if countResults == 0 {
+					break
 				}
-				acc := s.Account
-				if !acc.Discoverable {
-					errReqFollow = fmt.Errorf("found account %s skip due to no explicit discoverable flag set", s.Account.Uri)
-				}
-				if acc.Indexable != nil && !*acc.Indexable {
-					errReqFollow = fmt.Errorf("found account %s skip due to no explicit indexable flag set", s.Account.Uri)
-				}
-				if acc.Noindex {
-					errReqFollow = fmt.Errorf("found account %s skip due to noindex flag", s.Account.Uri)
-				}
-				for _, t := range acc.Tags {
-					if strings.ToLower(t.Name) == tagNoBot {
-						errReqFollow = fmt.Errorf("found account %s skip due to %s tag", s.Account.Uri, tagNoBot)
+				offset += countResults
+				for _, st := range results.Statuses {
+					errSt := m.processFoundStatus(ctx, st, interestId, groupId, q)
+					switch errSt {
+					case nil:
+						n++
+					default:
+						err = errors.Join(err, errSt)
+					}
+					if n > limit {
 						break
 					}
 				}
-				if errReqFollow == nil && s.Account.FollowersCount < m.cfg.CountMin.Followers {
-					errReqFollow = fmt.Errorf("found account %s skip due low followers count %d", s.Account.Uri, s.Account.FollowersCount)
-				}
-				if errReqFollow == nil && s.Account.StatusesCount < m.cfg.CountMin.Followers {
-					errReqFollow = fmt.Errorf("found account %s skip due low post count %d", s.Account.Uri, s.Account.StatusesCount)
-				}
-				if errReqFollow == nil {
-					errReqFollow = m.svcAp.Create(ctx, acc.Uri, groupId, "", subId, q)
-				}
-				if errReqFollow == nil {
-					n++
-				}
-				if n > limit {
+			case model.SearchTypeAccounts:
+				countResults := len(results.Accounts)
+				if countResults == 0 {
 					break
 				}
-				err = errors.Join(err, errReqFollow)
+				offset += countResults
+				for _, acc := range results.Accounts {
+					errSt := m.processFoundAccount(ctx, acc, interestId, groupId, q, false)
+					switch errSt {
+					case nil:
+						n++
+					default:
+						err = errors.Join(err, errSt)
+					}
+					if n > limit {
+						break
+					}
+				}
 			}
+		}
+	}
+	return
+}
+
+func (m mastodon) processFoundStatus(ctx context.Context, s model.Status, interestId, groupId, q string) (err error) {
+	if s.Sensitive {
+		err = fmt.Errorf("found account %s skip due to sensitive flag", s.Account.Uri)
+	}
+	acc := s.Account
+	if err == nil && acc.FollowersCount < m.cfg.CountMin.Followers {
+		err = fmt.Errorf("found account %s skip due low followers count %d", acc.Uri, acc.FollowersCount)
+	}
+	if err == nil && acc.StatusesCount < m.cfg.CountMin.Followers {
+		err = fmt.Errorf("found account %s skip due low post count %d", acc.Uri, acc.StatusesCount)
+	}
+	err = m.processFoundAccount(ctx, acc, interestId, groupId, q, true)
+	return
+}
+
+func (m mastodon) processFoundAccount(ctx context.Context, acc model.Account, interestId, groupId, q string, delegateFollow bool) (err error) {
+	if !acc.Discoverable {
+		err = fmt.Errorf("found account %s skip due to no explicit discoverable flag set", acc.Uri)
+	}
+	if err == nil && acc.Indexable != nil && !*acc.Indexable {
+		err = fmt.Errorf("found account %s skip due to no explicit indexable flag set", acc.Uri)
+	}
+	if err == nil && acc.Noindex {
+		err = fmt.Errorf("found account %s skip due to noindex flag", acc.Uri)
+	}
+	if err == nil {
+		for _, t := range acc.Tags {
+			if strings.ToLower(t.Name) == tagNoBot {
+				err = fmt.Errorf("found account %s skip due to %s tag", acc.Uri, tagNoBot)
+				break
+			}
+		}
+	}
+	if err == nil {
+		switch delegateFollow {
+		case true:
+			err = m.svcAp.Create(ctx, acc.Uri, groupId, "", interestId, q)
+		default:
+			err = m.follow(ctx, acc)
+		}
+	}
+	return
+}
+
+func (m mastodon) follow(ctx context.Context, acc model.Account) (err error) {
+	var req *http.Request
+	req, err = http.NewRequestWithContext(ctx, http.MethodPost, m.cfg.Endpoint.Search+"/"+acc.Id+"/follow", strings.NewReader(`{"reblogs":true}`))
+	var resp *http.Response
+	if err == nil {
+		req.Header.Add("Accept", "application/json")
+		req.Header.Add("Authorization", "Bearer "+m.cfg.Client.Token)
+		req.Header.Add("User-Agent", m.userAgent)
+		resp, err = m.clientHttp.Do(req)
+	}
+	if err == nil {
+		defer resp.Body.Close()
+		if resp.StatusCode != http.StatusOK {
+			data, _ := io.ReadAll(io.LimitReader(resp.Body, limitRespBodyLenErr))
+			err = fmt.Errorf("failed to follow the account %s: %s", acc.Acct, string(data))
 		}
 	}
 	return

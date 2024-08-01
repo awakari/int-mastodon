@@ -4,6 +4,7 @@ import "time"
 
 type Results struct {
 	Statuses []Status
+	Accounts []Account
 }
 
 type Status struct {
@@ -20,6 +21,7 @@ type Status struct {
 }
 
 type Account struct {
+	Id             string `json:"id"`
 	Acct           string `json:"acct"`
 	Discoverable   bool   `json:"discoverable"`
 	DisplayName    string `json:"display_name"`

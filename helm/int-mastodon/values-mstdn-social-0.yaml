@@ -5,7 +5,13 @@ api:
     uri: "api:50051"
 mastodon:
   endpoint:
+    accounts: "https://mstdn.social/api/v1/accounts"
     search: "https://mstdn.social/api/v2/search"
     stream: "https://mstdn.social/api/v1/streaming/public?remote=false&only_media=false"
   stream:
     timeout: "15m"
+queue:
+  interestsCreated:
+    name: "int-mastodon-mstdn-social"
+  interestsUpdated:
+    name: "int-mastodon-mstdn-social"

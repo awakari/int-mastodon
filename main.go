@@ -2,19 +2,35 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/awakari/client-sdk-go/api"
 	apiGrpc "github.com/awakari/int-mastodon/api/grpc"
 	apiGrpcAp "github.com/awakari/int-mastodon/api/grpc/int-activitypub"
+	"github.com/awakari/int-mastodon/api/grpc/queue"
 	"github.com/awakari/int-mastodon/config"
+	"github.com/awakari/int-mastodon/model"
 	"github.com/awakari/int-mastodon/service"
 	"github.com/awakari/int-mastodon/service/writer"
+	"github.com/cloudevents/sdk-go/binding/format/protobuf/v2/pb"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"log/slog"
 	"net/http"
 	"os"
+	"strings"
 )
+
+type evtTypeInterests int
+
+const (
+	evtTypeInterestsCreated evtTypeInterests = iota
+	evtTypeInterestsUpdated
+)
+
+const ceKeyGroupId = "awakarigroupid"
+const ceKeyQueriesCompl = "queriescompl"
+const ceKeyPublic = "public"
 
 func main() {
 	//
@@ -64,9 +80,123 @@ func main() {
 			}
 		}
 	}()
-	//
-	log.Info(fmt.Sprintf("starting to listen the gRPC API @ port #%d...", cfg.Api.Port))
-	if err = apiGrpc.Serve(cfg.Api.Port, svc); err != nil {
+
+	// init queues
+	connQueue, err := grpc.NewClient(cfg.Api.Queue.Uri, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
 		panic(err)
 	}
+	log.Info("connected to the queue service")
+	clientQueue := queue.NewServiceClient(connQueue)
+	svcQueue := queue.NewService(clientQueue)
+	svcQueue = queue.NewLoggingMiddleware(svcQueue, log)
+	err = svcQueue.SetConsumer(context.TODO(), cfg.Api.Queue.InterestsCreated.Name, cfg.Api.Queue.InterestsCreated.Subj)
+	if err != nil {
+		panic(err)
+	}
+	log.Info(fmt.Sprintf("initialized the %s queue", cfg.Api.Queue.InterestsCreated.Name))
+	go func() {
+		err = consumeQueue(
+			context.Background(),
+			svc,
+			svcQueue,
+			cfg.Api.Queue.InterestsCreated.Name,
+			cfg.Api.Queue.InterestsCreated.Subj,
+			cfg.Api.Queue.InterestsCreated.BatchSize,
+			evtTypeInterestsCreated,
+			cfg,
+		)
+		if err != nil {
+			panic(err)
+		}
+	}()
+	err = svcQueue.SetConsumer(context.TODO(), cfg.Api.Queue.InterestsUpdated.Name, cfg.Api.Queue.InterestsUpdated.Subj)
+	if err != nil {
+		panic(err)
+	}
+	log.Info(fmt.Sprintf("initialized the %s queue", cfg.Api.Queue.InterestsUpdated.Name))
+	go func() {
+		err = consumeQueue(
+			context.Background(),
+			svc,
+			svcQueue,
+			cfg.Api.Queue.InterestsUpdated.Name,
+			cfg.Api.Queue.InterestsUpdated.Subj,
+			cfg.Api.Queue.InterestsUpdated.BatchSize,
+			evtTypeInterestsUpdated,
+			cfg,
+		)
+		if err != nil {
+			panic(err)
+		}
+	}()
+
+	log.Info(fmt.Sprintf("starting to listen the gRPC API @ port #%d...", cfg.Api.Port))
+	err = apiGrpc.Serve(cfg.Api.Port, svc)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func consumeQueue(
+	ctx context.Context,
+	svc service.Service,
+	svcQueue queue.Service,
+	name, subj string,
+	batchSize uint32,
+	typ evtTypeInterests,
+	cfg config.Config,
+) (err error) {
+	for {
+		err = svcQueue.ReceiveMessages(ctx, name, subj, batchSize, func(evts []*pb.CloudEvent) (err error) {
+			return consumeEvents(ctx, svc, evts, typ, cfg)
+		})
+		if err != nil {
+			break
+		}
+	}
+	return
+}
+
+func consumeEvents(
+	ctx context.Context,
+	svc service.Service,
+	evts []*pb.CloudEvent,
+	typ evtTypeInterests,
+	cfg config.Config,
+) (err error) {
+	for _, evt := range evts {
+		interestId := evt.GetTextData()
+		var queries []string
+		if queriesComplAttr, queriesComplPresent := evt.Attributes[ceKeyQueriesCompl]; queriesComplPresent {
+			queries = strings.Split(queriesComplAttr.GetCeString(), "\n")
+		}
+		var groupId string
+		if groupIdAttr, groupIdIdPresent := evt.Attributes[ceKeyGroupId]; groupIdIdPresent {
+			groupId = groupIdAttr.GetCeString()
+		}
+		if groupId == "" {
+			err = fmt.Errorf("interest %s creation: missing group id in the event", interestId)
+		}
+		if err == nil && len(queries) > 0 {
+			for _, q := range queries {
+				_, err = svc.SearchAndAdd(ctx, interestId, groupId, q, cfg.Api.Mastodon.Search.Limit, model.SearchTypeStatuses)
+				if err != nil {
+					break
+				}
+			}
+		}
+		publicAttr, publicAttrPresent := evt.Attributes[ceKeyPublic]
+		if publicAttrPresent && publicAttr.GetCeBoolean() && typ == evtTypeInterestsCreated {
+			actor := interestId + "@" + cfg.Api.ActivityPub.Host
+			_, errFollow := svc.SearchAndAdd(ctx, interestId, groupId, actor, 1, model.SearchTypeAccounts)
+			if errFollow != nil {
+				err = errors.Join(err, errFollow)
+			}
+		}
+		if err != nil {
+			break
+		}
+	}
+	return
 }

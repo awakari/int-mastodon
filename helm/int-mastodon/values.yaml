@@ -77,6 +77,7 @@ affinity: {}
 
 api:
   activitypub:
+    host: "activitypub.awakari.com"
     uri: "int-activitypub:50051"
   event:
     type: "com.awakari.mastodon.v1"
@@ -88,13 +89,26 @@ log:
   # https://pkg.go.dev/golang.org/x/exp/slog#Level
   level: -4
 mastodon:
+  search:
+    limit: 5
   count:
     min:
       followers: 1234
       posts: 1234
   endpoint:
+    accounts: "https://mastodon.social/api/v1/accounts"
     search: "https://mastodon.social/api/v2/search"
     stream: "https://streaming.mastodon.social/api/v1/streaming/public?remote=false&only_media=false"
   userAgent: "Awakari"
   stream:
     timeout: "5m"
+queue:
+  uri: "queue:50051"
+  interestsCreated:
+    batchSize: 1
+    name: "int-mastodon-mastodon-social"
+    subj: "interests-created"
+  interestsUpdated:
+    batchSize: 1
+    name: "int-mastodon-mastodon-social"
+    subj: "interests-updated"

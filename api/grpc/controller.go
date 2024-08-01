@@ -2,6 +2,7 @@ package grpc
 
 import (
 	"context"
+	"github.com/awakari/int-mastodon/model"
 	"github.com/awakari/int-mastodon/service"
 )
 
@@ -17,6 +18,6 @@ func NewController(search service.Service) ServiceServer {
 
 func (c controller) SearchAndAdd(ctx context.Context, req *SearchAndAddRequest) (resp *SearchAndAddResponse, err error) {
 	resp = &SearchAndAddResponse{}
-	resp.N, err = c.search.SearchAndAdd(ctx, req.SubId, req.GroupId, req.Q, req.Limit)
+	resp.N, err = c.search.SearchAndAdd(ctx, req.SubId, req.GroupId, req.Q, req.Limit, model.SearchTypeStatuses)
 	return
 }
