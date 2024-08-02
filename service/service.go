@@ -58,11 +58,11 @@ func NewService(
 	}
 }
 
-func (m mastodon) SearchAndAdd(ctx context.Context, interestId, groupId, q string, limit uint32, typ model.SearchType) (n uint32, err error) {
-	var offset int
+func (m mastodon) SearchAndAdd(ctx context.Context, interestId, groupId, q string, limit uint32, typ model.SearchType) (n uint32, errs error) {
 	for n < limit {
-		reqQuery := "?q=" + url.QueryEscape(q) + "&type=" + typ.String() + "&resolve=true&offset=" + strconv.Itoa(offset) + "&limit=" + strconv.Itoa(int(limit))
+		reqQuery := "?q=" + url.QueryEscape(q) + "&type=" + typ.String() + "&resolve=true&offset=" + strconv.Itoa(int(n)) + "&limit=" + strconv.Itoa(int(limit-n))
 		var req *http.Request
+		var err error
 		req, err = http.NewRequestWithContext(ctx, http.MethodGet, m.cfg.Endpoint.Search+reqQuery, nil)
 		var resp *http.Response
 		if err == nil {
@@ -72,7 +72,7 @@ func (m mastodon) SearchAndAdd(ctx context.Context, interestId, groupId, q strin
 			resp, err = m.clientHttp.Do(req)
 		}
 		var data []byte
-		if err == nil {
+		if err == nil && resp != nil {
 			data, err = io.ReadAll(io.LimitReader(resp.Body, limitRespBodyLen))
 			_ = resp.Body.Close()
 		}
@@ -80,43 +80,32 @@ func (m mastodon) SearchAndAdd(ctx context.Context, interestId, groupId, q strin
 		if err == nil {
 			err = json.Unmarshal(data, &results)
 		}
-		if err == nil {
-			switch typ {
-			case model.SearchTypeStatuses:
-				countResults := len(results.Statuses)
-				if countResults == 0 {
-					break
+		if err != nil {
+			errs = errors.Join(errs, err)
+			break
+		}
+		if typ == model.SearchTypeStatuses {
+			countResults := len(results.Statuses)
+			if countResults == 0 {
+				break
+			}
+			n += uint32(countResults)
+			for _, st := range results.Statuses {
+				err = m.processFoundStatus(ctx, st, interestId, groupId, q)
+				if err != nil {
+					err = errors.Join(errs, err)
 				}
-				offset += countResults
-				for _, st := range results.Statuses {
-					errSt := m.processFoundStatus(ctx, st, interestId, groupId, q)
-					switch errSt {
-					case nil:
-						n++
-					default:
-						err = errors.Join(err, errSt)
-					}
-					if n > limit {
-						break
-					}
-				}
-			case model.SearchTypeAccounts:
-				countResults := len(results.Accounts)
-				if countResults == 0 {
-					break
-				}
-				offset += countResults
-				for _, acc := range results.Accounts {
-					errSt := m.processFoundAccount(ctx, acc, interestId, groupId, q, false)
-					switch errSt {
-					case nil:
-						n++
-					default:
-						err = errors.Join(err, errSt)
-					}
-					if n > limit {
-						break
-					}
+			}
+		} else if typ == model.SearchTypeAccounts {
+			countResults := len(results.Accounts)
+			if countResults == 0 {
+				break
+			}
+			n += uint32(countResults)
+			for _, acc := range results.Accounts {
+				err = m.processFoundAccount(ctx, acc, interestId, groupId, q, false)
+				if err != nil {
+					errs = errors.Join(errs, err)
 				}
 			}
 		}
@@ -170,7 +159,7 @@ func (m mastodon) processFoundAccount(ctx context.Context, acc model.Account, in
 
 func (m mastodon) follow(ctx context.Context, acc model.Account) (err error) {
 	var req *http.Request
-	req, err = http.NewRequestWithContext(ctx, http.MethodPost, m.cfg.Endpoint.Search+"/"+acc.Id+"/follow", strings.NewReader(`{"reblogs":true}`))
+	req, err = http.NewRequestWithContext(ctx, http.MethodPost, m.cfg.Endpoint.Accounts+"/"+acc.Id+"/follow", nil)
 	var resp *http.Response
 	if err == nil {
 		req.Header.Add("Accept", "application/json")
@@ -182,7 +171,14 @@ func (m mastodon) follow(ctx context.Context, acc model.Account) (err error) {
 		defer resp.Body.Close()
 		if resp.StatusCode != http.StatusOK {
 			data, _ := io.ReadAll(io.LimitReader(resp.Body, limitRespBodyLenErr))
-			err = fmt.Errorf("failed to follow the account %s: %s", acc.Acct, string(data))
+			err = fmt.Errorf(
+				"failed to follow the account %s: request_url=%s, request_headers=%+v, response=%d/%s",
+				acc.Acct,
+				req.URL,
+				req.Header,
+				resp.StatusCode,
+				string(data),
+			)
 		}
 	}
 	return

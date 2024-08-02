@@ -150,10 +150,13 @@ func consumeQueue(
 	log *slog.Logger,
 ) (err error) {
 	for {
-		_ = svcQueue.ReceiveMessages(ctx, name, subj, batchSize, func(evts []*pb.CloudEvent) (err error) {
+		err = svcQueue.ReceiveMessages(ctx, name, subj, batchSize, func(evts []*pb.CloudEvent) (err error) {
 			consumeEvents(ctx, svc, evts, typ, cfg, log)
 			return
 		})
+		if err != nil {
+			panic(err)
+		}
 	}
 }
 
@@ -165,12 +168,10 @@ func consumeEvents(
 	cfg config.Config,
 	log *slog.Logger,
 ) {
+	log.Debug(fmt.Sprintf("consumeEvents(%d, typ=%d))\n", len(evts), typ))
 	for _, evt := range evts {
+
 		interestId := evt.GetTextData()
-		var queries []string
-		if queriesComplAttr, queriesComplPresent := evt.Attributes[ceKeyQueriesCompl]; queriesComplPresent {
-			queries = strings.Split(queriesComplAttr.GetCeString(), "\n")
-		}
 		var groupId string
 		if groupIdAttr, groupIdIdPresent := evt.Attributes[ceKeyGroupId]; groupIdIdPresent {
 			groupId = groupIdAttr.GetCeString()
@@ -179,15 +180,27 @@ func consumeEvents(
 			log.Error(fmt.Sprintf("interest %s event type %d: empty group id, skipping", interestId, typ))
 			continue
 		}
-		if len(queries) > 0 {
+
+		publicAttr, publicAttrPresent := evt.Attributes[ceKeyPublic]
+		switch publicAttrPresent && publicAttr.GetCeBoolean() && typ == evtTypeInterestsCreated {
+		case true:
+			actor := interestId + "@" + cfg.Api.ActivityPub.Host
+			_, _ = svc.SearchAndAdd(ctx, interestId, groupId, actor, 1, model.SearchTypeAccounts)
+		default:
+			log.Debug(fmt.Sprintf("interest %s event type %d: public: %t/%t", interestId, typ, publicAttrPresent, publicAttr.GetCeBoolean()))
+		}
+
+		var queries []string
+		if queriesComplAttr, queriesComplPresent := evt.Attributes[ceKeyQueriesCompl]; queriesComplPresent {
+			queries = strings.Split(queriesComplAttr.GetCeString(), "\n")
+		}
+		switch len(queries) {
+		case 0:
+			log.Debug(fmt.Sprintf("interest %s event type %d: no queries, skipping the sources discovery", interestId, typ))
+		default:
 			for _, q := range queries {
 				_, _ = svc.SearchAndAdd(ctx, interestId, groupId, q, cfg.Api.Mastodon.Search.Limit, model.SearchTypeStatuses)
 			}
-		}
-		publicAttr, publicAttrPresent := evt.Attributes[ceKeyPublic]
-		if publicAttrPresent && publicAttr.GetCeBoolean() && typ == evtTypeInterestsCreated {
-			actor := interestId + "@" + cfg.Api.ActivityPub.Host
-			_, _ = svc.SearchAndAdd(ctx, interestId, groupId, actor, 1, model.SearchTypeAccounts)
 		}
 	}
 	return

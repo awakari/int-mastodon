@@ -46,6 +46,8 @@ spec:
               value: "{{ .Values.api.event.type }}"
             - name: LOG_LEVEL
               value: "{{ .Values.log.level }}"
+            - name: API_MASTODON_ENDPOINT_ACCOUNTS
+              value: "{{ .Values.mastodon.endpoint.accounts }}"
             - name: API_MASTODON_ENDPOINT_SEARCH
               value: "{{ .Values.mastodon.endpoint.search }}"
             - name: API_MASTODON_ENDPOINT_STREAM

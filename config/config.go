@@ -36,7 +36,7 @@ type MastodonConfig struct {
 		UserAgent string `envconfig:"API_MASTODON_USER_AGENT" default:"awakari" required:"true""`
 	}
 	Endpoint struct {
-		Accounts string `envconfig:"API_MASTODON_ENDPOINT_SEARCH" default:"https://mastodon.social/api/v1/accounts" required:"true"`
+		Accounts string `envconfig:"API_MASTODON_ENDPOINT_ACCOUNTS" default:"https://mastodon.social/api/v1/accounts" required:"true"`
 		Search   string `envconfig:"API_MASTODON_ENDPOINT_SEARCH" default:"https://mastodon.social/api/v2/search" required:"true"`
 		Stream   string `envconfig:"API_MASTODON_ENDPOINT_STREAM" default:"https://streaming.mastodon.social/api/v1/streaming/public?remote=false&only_media=false" required:"true"`
 	}
@@ -51,7 +51,8 @@ type MastodonConfig struct {
 }
 
 type QueueConfig struct {
-	Uri              string `envconfig:"API_QUEUE_URI" default:"queue:50051" required:"true"`
+	BackoffError     time.Duration `envconfig:"API_QUEUE_BACKOFF_ERROR" default:"1s" required:"true"`
+	Uri              string        `envconfig:"API_QUEUE_URI" default:"queue:50051" required:"true"`
 	InterestsCreated struct {
 		BatchSize uint32 `envconfig:"API_QUEUE_INTERESTS_CREATED_BATCH_SIZE" default:"1" required:"true"`
 		Name      string `envconfig:"API_QUEUE_INTERESTS_CREATED_NAME" default:"source-search" required:"true"`
