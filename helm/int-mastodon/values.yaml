@@ -89,7 +89,7 @@ api:
     host: "activitypub.awakari.com"
     uri: "int-activitypub:50051"
   event:
-    type: "com.awakari.mastodon.v1"
+    type: "com_awakari_mastodon_v1"
   writer:
     backoff: "10s"
     batchSize: 16

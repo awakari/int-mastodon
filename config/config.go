@@ -14,7 +14,7 @@ type Config struct {
 			Uri       string        `envconfig:"API_WRITER_URI" default:"resolver:50051" required:"true"`
 		}
 		Event struct {
-			Type string `envconfig:"API_EVENT_TYPE" required:"true" default:"com.awakari.mastodon.v1"`
+			Type string `envconfig:"API_EVENT_TYPE" required:"true" default:"com_awakari_mastodon_v1"`
 		}
 		ActivityPub struct {
 			Host string `envconfig:"API_ACTIVITYPUB_HOST" default:"activitypub.awakari.com" required:"true"`

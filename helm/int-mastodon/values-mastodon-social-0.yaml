@@ -1,5 +1,5 @@
 api:
   event:
-    type: "com.awakari.mastodon.v1.i1"
+    type: "com_awakari_mastodon_v1_i1"
   writer:
     uri: "api:50051"
