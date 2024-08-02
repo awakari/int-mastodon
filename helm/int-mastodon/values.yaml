@@ -93,7 +93,7 @@ api:
   writer:
     backoff: "10s"
     batchSize: 16
-    uri: "resolver:50051"
+    uri: "api:50051"
 log:
   # https://pkg.go.dev/golang.org/x/exp/slog#Level
   level: -4
