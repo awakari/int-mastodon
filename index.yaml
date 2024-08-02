@@ -3,12 +3,12 @@ entries:
   int-mastodon:
   - apiVersion: v2
     appVersion: latest
-    created: "2024-08-02T13:00:16.382723049Z"
+    created: "2024-08-02T13:12:16.323500673Z"
     description: A Helm chart for Awakari int-mastodon
-    digest: de22c774238435703cbf323bb6ce690431c097a7c64ff3d2f9b958de9b6540d5
+    digest: 780e45b894bdffc89911720ce9781cef23c3723c7c71bc5c4271d76c0326636a
     name: int-mastodon
     type: application
     urls:
     - int-mastodon-0.0.0.tgz
     version: 0.0.0
-generated: "2024-08-02T13:00:16.382064854Z"
+generated: "2024-08-02T13:12:16.32284398Z"
