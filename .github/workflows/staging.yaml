@@ -67,38 +67,44 @@ jobs:
             --region ${{ secrets.GKE_CLUSTER_REGION }} \
             --project ${{ secrets.GKE_PROJECT_ID }}
 
-      - name: Helm Upgrade 1
-        run: |
-          helm upgrade --install ${COMPONENT} helm/package/${COMPONENT}-0.0.0.tgz \
-            --values helm/int-mastodon/values-mastodon-social-0.yaml \
-            --set-string podAnnotations.commit=$(git rev-parse --short HEAD)
+#      - name: Helm Upgrade 1
+#        run: |
+#          helm upgrade --install ${COMPONENT} helm/package/${COMPONENT}-0.0.0.tgz \
+#            --values helm/int-mastodon/values-mastodon-social-0.yaml \
+#            --set-string podAnnotations.commit=$(git rev-parse --short HEAD)
+#
+#      - name: Helm Upgrade 2
+#        run: |
+#          helm upgrade --install ${COMPONENT}-infosec-exchange helm/package/${COMPONENT}-0.0.0.tgz \
+#            --values helm/int-mastodon/values-infosec-exchange-0.yaml \
+#            --set-string podAnnotations.commit=$(git rev-parse --short HEAD) \
+#
+#      - name: Helm Upgrade 3
+#        run: |
+#          helm upgrade --install ${COMPONENT}-mstdn-social helm/package/${COMPONENT}-0.0.0.tgz \
+#            --values helm/int-mastodon/values-mstdn-social-0.yaml \
+#            --set-string podAnnotations.commit=$(git rev-parse --short HEAD) \
+#
+#      - name: Helm Upgrade 4
+#        run: |
+#          helm upgrade --install ${COMPONENT}-botsin-space helm/package/${COMPONENT}-0.0.0.tgz \
+#            --values helm/int-mastodon/values-botsin-space-0.yaml \
+#            --set-string podAnnotations.commit=$(git rev-parse --short HEAD) \
+#
+#      - name: Helm Upgrade 5
+#        run: |
+#          helm upgrade --install ${COMPONENT}-flipboard-social helm/package/${COMPONENT}-0.0.0.tgz \
+#            --values helm/int-mastodon/values-flipboard-social-0.yaml \
+#            --set-string podAnnotations.commit=$(git rev-parse --short HEAD) \
+#
+#      - name: Helm Upgrade 6
+#        run: |
+#          helm upgrade --install ${COMPONENT}-mastodon-cloud helm/package/${COMPONENT}-0.0.0.tgz \
+#            --values helm/int-mastodon/values-mastodon-cloud-0.yaml \
+#            --set-string podAnnotations.commit=$(git rev-parse --short HEAD) \
 
-      - name: Helm Upgrade 2
+      - name: Helm Upgrade 7
         run: |
-          helm upgrade --install ${COMPONENT}-infosec-exchange helm/package/${COMPONENT}-0.0.0.tgz \
-            --values helm/int-mastodon/values-infosec-exchange-0.yaml \
-            --set-string podAnnotations.commit=$(git rev-parse --short HEAD) \
-
-      - name: Helm Upgrade 3
-        run: |
-          helm upgrade --install ${COMPONENT}-mstdn-social helm/package/${COMPONENT}-0.0.0.tgz \
-            --values helm/int-mastodon/values-mstdn-social-0.yaml \
-            --set-string podAnnotations.commit=$(git rev-parse --short HEAD) \
-
-      - name: Helm Upgrade 4
-        run: |
-          helm upgrade --install ${COMPONENT}-botsin-space helm/package/${COMPONENT}-0.0.0.tgz \
-            --values helm/int-mastodon/values-botsin-space-0.yaml \
-            --set-string podAnnotations.commit=$(git rev-parse --short HEAD) \
-
-      - name: Helm Upgrade 5
-        run: |
-          helm upgrade --install ${COMPONENT}-flipboard-social helm/package/${COMPONENT}-0.0.0.tgz \
-            --values helm/int-mastodon/values-flipboard-social-0.yaml \
-            --set-string podAnnotations.commit=$(git rev-parse --short HEAD) \
-
-      - name: Helm Upgrade 6
-        run: |
-          helm upgrade --install ${COMPONENT}-mastodon-cloud helm/package/${COMPONENT}-0.0.0.tgz \
-            --values helm/int-mastodon/values-mastodon-cloud-0.yaml \
+          helm upgrade --install ${COMPONENT}-techhub-social helm/package/${COMPONENT}-0.0.0.tgz \
+            --values helm/int-mastodon/values-techhub-social-0.yaml \
             --set-string podAnnotations.commit=$(git rev-parse --short HEAD) \
