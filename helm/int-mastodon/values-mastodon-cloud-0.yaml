@@ -1,0 +1,17 @@
+api:
+  event:
+    type: "com.awakari.mastodon.v1.i7"
+  writer:
+    uri: "api:50051"
+mastodon:
+  endpoint:
+    accounts: "https://mastodon.cloud/api/v1/accounts"
+    search: "https://mastodon.cloud/api/v2/search"
+    stream: "https://mastodon.cloud/api/v1/streaming/public?remote=false&only_media=false"
+  stream:
+    timeout: "15m"
+queue:
+  interestsCreated:
+    name: "int-mastodon-mastodon-cloud"
+  interestsUpdated:
+    name: "int-mastodon-mastodon-cloud"

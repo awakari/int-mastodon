@@ -1,0 +1,17 @@
+api:
+  event:
+    type: "com.awakari.mastodon.v1.i6"
+  writer:
+    uri: "api:50051"
+mastodon:
+  endpoint:
+    accounts: "https://flipboard.social/api/v1/accounts"
+    search: "https://flipboard.social/api/v2/search"
+    stream: "https://flipboard.social/api/v1/streaming/public?remote=false&only_media=false"
+  stream:
+    timeout: "15m"
+queue:
+  interestsCreated:
+    name: "int-mastodon-flipboard-social"
+  interestsUpdated:
+    name: "int-mastodon-flipboard-social"
