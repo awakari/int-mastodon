@@ -1,0 +1,17 @@
+api:
+  event:
+    type: "com.awakari.mastodon.v1.i8"
+  writer:
+    uri: "api:50051"
+mastodon:
+  endpoint:
+    accounts: "https://techhub.social/api/v1/accounts"
+    search: "https://techhub.social/api/v2/search"
+    stream: "https://techhub.social/api/v1/streaming/public?remote=false&only_media=false"
+  stream:
+    timeout: "15m"
+queue:
+  interestsCreated:
+    name: "int-mastodon-techhub-social"
+  interestsUpdated:
+    name: "int-mastodon-techhub-social"
