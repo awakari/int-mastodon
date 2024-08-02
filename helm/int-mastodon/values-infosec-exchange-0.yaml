@@ -1,8 +1,3 @@
-api:
-  event:
-    type: "com_awakari_mastodon_v1_i3"
-  writer:
-    uri: "api:50051"
 mastodon:
   endpoint:
     accounts: "https://infosec.exchange/api/v1/accounts"
