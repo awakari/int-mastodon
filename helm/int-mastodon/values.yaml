@@ -115,9 +115,9 @@ queue:
   uri: "queue:50051"
   interestsCreated:
     batchSize: 1
-    name: "int-mastodon-mastodon-social"
+    name: "int-mastodon"
     subj: "interests-created"
   interestsUpdated:
     batchSize: 1
-    name: "int-mastodon-mastodon-social"
+    name: "int-mastodon"
     subj: "interests-updated"
