@@ -102,8 +102,8 @@ mastodon:
     limit: 5
   count:
     min:
-      followers: 1234
-      posts: 1234
+      followers: 789
+      posts: 789
   endpoint:
     accounts: "https://mastodon.social/api/v1/accounts"
     search: "https://mastodon.social/api/v2/search"
