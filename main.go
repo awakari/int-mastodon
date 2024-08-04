@@ -64,7 +64,7 @@ func main() {
 	svcActivityPub := apiGrpcAp.NewService(clientAp)
 	svcActivityPub = apiGrpcAp.NewServiceLogging(svcActivityPub, log)
 	//
-	svcWriter := writer.NewService(clientAwk, cfg.Api.Writer.Backoff)
+	svcWriter := writer.NewService(clientAwk, cfg.Api.Writer.Backoff, log)
 	svcWriter = writer.NewLogging(svcWriter, log)
 	//
 	clientHttp := &http.Client{}
