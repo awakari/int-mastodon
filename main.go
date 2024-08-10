@@ -182,7 +182,7 @@ func consumeEvents(
 		}
 
 		publicAttr, publicAttrPresent := evt.Attributes[ceKeyPublic]
-		switch publicAttrPresent && publicAttr.GetCeBoolean() && typ == evtTypeInterestsCreated {
+		switch publicAttrPresent && publicAttr.GetCeBoolean() {
 		case true:
 			actor := interestId + "@" + cfg.Api.ActivityPub.Host
 			_, _ = svc.SearchAndAdd(ctx, interestId, groupId, actor, 1, model.SearchTypeAccounts)
