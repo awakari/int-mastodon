@@ -20,13 +20,6 @@ import (
 	"strings"
 )
 
-type evtTypeInterests int
-
-const (
-	evtTypeInterestsCreated evtTypeInterests = iota
-	evtTypeInterestsUpdated
-)
-
 const ceKeyGroupId = "awakarigroupid"
 const ceKeyQueriesCompl = "queriescompl"
 const ceKeyPublic = "public"
@@ -102,7 +95,6 @@ func main() {
 			cfg.Api.Queue.InterestsCreated.Name,
 			cfg.Api.Queue.InterestsCreated.Subj,
 			cfg.Api.Queue.InterestsCreated.BatchSize,
-			evtTypeInterestsCreated,
 			cfg,
 			log,
 		)
@@ -123,7 +115,6 @@ func main() {
 			cfg.Api.Queue.InterestsUpdated.Name,
 			cfg.Api.Queue.InterestsUpdated.Subj,
 			cfg.Api.Queue.InterestsUpdated.BatchSize,
-			evtTypeInterestsUpdated,
 			cfg,
 			log,
 		)
@@ -145,13 +136,12 @@ func consumeQueue(
 	svcQueue queue.Service,
 	name, subj string,
 	batchSize uint32,
-	typ evtTypeInterests,
 	cfg config.Config,
 	log *slog.Logger,
 ) (err error) {
 	for {
 		err = svcQueue.ReceiveMessages(ctx, name, subj, batchSize, func(evts []*pb.CloudEvent) (err error) {
-			consumeEvents(ctx, svc, evts, typ, cfg, log)
+			consumeEvents(ctx, svc, evts, cfg, log)
 			return
 		})
 		if err != nil {
@@ -164,11 +154,10 @@ func consumeEvents(
 	ctx context.Context,
 	svc service.Service,
 	evts []*pb.CloudEvent,
-	typ evtTypeInterests,
 	cfg config.Config,
 	log *slog.Logger,
 ) {
-	log.Debug(fmt.Sprintf("consumeEvents(%d, typ=%d))\n", len(evts), typ))
+	log.Debug(fmt.Sprintf("consumeEvents(%d))\n", len(evts)))
 	for _, evt := range evts {
 
 		interestId := evt.GetTextData()
@@ -177,7 +166,7 @@ func consumeEvents(
 			groupId = groupIdAttr.GetCeString()
 		}
 		if groupId == "" {
-			log.Error(fmt.Sprintf("interest %s event type %d: empty group id, skipping", interestId, typ))
+			log.Error(fmt.Sprintf("interest %s event: empty group id, skipping", interestId))
 			continue
 		}
 
@@ -187,7 +176,7 @@ func consumeEvents(
 			actor := interestId + "@" + cfg.Api.ActivityPub.Host
 			_, _ = svc.SearchAndAdd(ctx, interestId, groupId, actor, 1, model.SearchTypeAccounts)
 		default:
-			log.Debug(fmt.Sprintf("interest %s event type %d: public: %t/%t", interestId, typ, publicAttrPresent, publicAttr.GetCeBoolean()))
+			log.Debug(fmt.Sprintf("interest %s event: public: %t/%t", interestId, publicAttrPresent, publicAttr.GetCeBoolean()))
 		}
 
 		var queries []string
@@ -196,7 +185,7 @@ func consumeEvents(
 		}
 		switch len(queries) {
 		case 0:
-			log.Debug(fmt.Sprintf("interest %s event type %d: no queries, skipping the sources discovery", interestId, typ))
+			log.Debug(fmt.Sprintf("interest %s event: no queries, skipping the sources discovery", interestId))
 		default:
 			for _, q := range queries {
 				_, _ = svc.SearchAndAdd(ctx, interestId, groupId, q, cfg.Api.Mastodon.Search.Limit, model.SearchTypeStatuses)
