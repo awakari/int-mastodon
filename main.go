@@ -23,6 +23,7 @@ import (
 const ceKeyGroupId = "awakarigroupid"
 const ceKeyQueriesCompl = "queriescompl"
 const ceKeyPublic = "public"
+const ceKeyDiscover = "discover"
 
 func main() {
 	//
@@ -179,14 +180,15 @@ func consumeEvents(
 			log.Debug(fmt.Sprintf("interest %s event: public: %t/%t", interestId, publicAttrPresent, publicAttr.GetCeBoolean()))
 		}
 
+		var discover bool
+		if attrDiscover, attrDiscoverExists := evt.Attributes[ceKeyDiscover]; attrDiscoverExists {
+			discover = attrDiscover.GetCeBoolean()
+		}
 		var queries []string
 		if queriesComplAttr, queriesComplPresent := evt.Attributes[ceKeyQueriesCompl]; queriesComplPresent {
 			queries = strings.Split(queriesComplAttr.GetCeString(), "\n")
 		}
-		switch len(queries) {
-		case 0:
-			log.Debug(fmt.Sprintf("interest %s event: no queries, skipping the sources discovery", interestId))
-		default:
+		if discover && len(queries) > 0 {
 			for _, q := range queries {
 				_, _ = svc.SearchAndAdd(ctx, interestId, groupId, q, cfg.Api.Mastodon.Search.Limit, model.SearchTypeStatuses)
 			}
