@@ -1,0 +1,10 @@
+mastodon:
+  endpoint:
+    accounts: "https://mastodon.world/api/v1/accounts"
+    search: "https://mastodon.world/api/v2/search"
+    stream: "https://mastodon.world/api/v1/streaming/public?remote=false&only_media=false"
+queue:
+  interestsCreated:
+    name: "int-mastodon-mastodon-world"
+  interestsUpdated:
+    name: "int-mastodon-mastodon-world"
