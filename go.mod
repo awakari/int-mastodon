@@ -1,6 +1,6 @@
 module github.com/awakari/int-mastodon
 
-go 1.22
+go 1.23
 
 require (
 	github.com/awakari/client-sdk-go v1.1.0
