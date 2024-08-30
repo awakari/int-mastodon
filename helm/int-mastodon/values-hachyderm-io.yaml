@@ -1,0 +1,10 @@
+mastodon:
+  endpoint:
+    accounts: "https://hachyderm.io/api/v1/accounts"
+    search: "https://hachyderm.io/api/v2/search"
+    stream: "https://hachyderm.io/api/v1/streaming/public?remote=false&only_media=false"
+queue:
+  interestsCreated:
+    name: "int-mastodon-hachyderm-io"
+  interestsUpdated:
+    name: "int-mastodon-hachyderm-io"
