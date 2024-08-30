@@ -1,0 +1,10 @@
+mastodon:
+  endpoint:
+    accounts: "https://c.im/api/v1/accounts"
+    search: "https://c.im/api/v2/search"
+    stream: "https://c.im/api/v1/streaming/public?remote=false&only_media=false"
+queue:
+  interestsCreated:
+    name: "int-mastodon-c-im"
+  interestsUpdated:
+    name: "int-mastodon-c-im"
