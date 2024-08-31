@@ -46,7 +46,7 @@ type MastodonConfig struct {
 		Posts     uint32 `envconfig:"API_MASTODON_COUNT_MIN_POSTS" default:"1000" required:"true"`
 	}
 	Search struct {
-		Limit uint32 `envconfig:"API_MASTODON_SEARCH_LIMIT" default:"5" required:"true"`
+		Limit uint32 `envconfig:"API_MASTODON_SEARCH_LIMIT" default:"10" required:"true"`
 	}
 }
 
