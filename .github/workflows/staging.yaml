@@ -118,7 +118,7 @@ jobs:
       - name: Helm Upgrade 9
         run: |
           helm upgrade --install ${COMPONENT}-mastodon-world helm/package/${COMPONENT}-0.0.0.tgz \
-            --values helm/int-mastodon/values-mastodon-uno.yaml \
+            --values helm/int-mastodon/values-mastodon-world.yaml \
             --set-string podAnnotations.commit=$(git rev-parse --short HEAD) \
 
       - name: Helm Upgrade 10
