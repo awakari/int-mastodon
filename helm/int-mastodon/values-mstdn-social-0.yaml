@@ -11,5 +11,3 @@ queue:
     name: "int-mastodon-mstdn-social"
   interestsUpdated:
     name: "int-mastodon-mstdn-social"
-priority:
-  class: "awk-major"

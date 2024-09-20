@@ -9,5 +9,3 @@ queue:
     name: "int-mastodon-hachyderm-io"
   interestsUpdated:
     name: "int-mastodon-hachyderm-io"
-priority:
-  class: "awk-major"

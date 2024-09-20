@@ -11,5 +11,3 @@ queue:
     name: "int-mastodon-mastodon-cloud"
   interestsUpdated:
     name: "int-mastodon-mastodon-cloud"
-priority:
-  class: "awk-major"

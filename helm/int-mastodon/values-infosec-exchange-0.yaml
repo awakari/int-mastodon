@@ -11,5 +11,3 @@ queue:
     name: "int-mastodon-infosec-exchange"
   interestsUpdated:
     name: "int-mastodon-infosec-exchange"
-priority:
-  class: "awk-major"

@@ -9,5 +9,3 @@ queue:
     name: "int-mastodon-c-im"
   interestsUpdated:
     name: "int-mastodon-c-im"
-priority:
-  class: "awk-major"
