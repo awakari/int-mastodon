@@ -1,3 +1,4 @@
+replicaCount: 0
 mastodon:
   endpoint:
     accounts: "https://flipboard.social/api/v1/accounts"
@@ -10,3 +11,5 @@ queue:
     name: "int-mastodon-flipboard-social"
   interestsUpdated:
     name: "int-mastodon-flipboard-social"
+priority:
+  class: "awk-major"

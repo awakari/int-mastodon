@@ -1,3 +1,4 @@
+replicaCount: 0
 mastodon:
   endpoint:
     accounts: "https://mstdn.social/api/v1/accounts"
@@ -10,3 +11,5 @@ queue:
     name: "int-mastodon-mstdn-social"
   interestsUpdated:
     name: "int-mastodon-mstdn-social"
+priority:
+  class: "awk-major"

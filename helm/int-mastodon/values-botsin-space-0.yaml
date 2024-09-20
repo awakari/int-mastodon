@@ -10,3 +10,5 @@ queue:
     name: "int-mastodon-botsin-space"
   interestsUpdated:
     name: "int-mastodon-botsin-space"
+priority:
+  class: "awk-major"

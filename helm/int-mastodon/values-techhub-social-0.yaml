@@ -1,3 +1,4 @@
+replicaCount: 0
 mastodon:
   endpoint:
     accounts: "https://techhub.social/api/v1/accounts"
@@ -10,3 +11,5 @@ queue:
     name: "int-mastodon-techhub-social"
   interestsUpdated:
     name: "int-mastodon-techhub-social"
+priority:
+  class: "awk-major"

@@ -1,3 +1,4 @@
+replicaCount: 0
 mastodon:
   endpoint:
     accounts: "https://infosec.exchange/api/v1/accounts"
@@ -10,3 +11,5 @@ queue:
     name: "int-mastodon-infosec-exchange"
   interestsUpdated:
     name: "int-mastodon-infosec-exchange"
+priority:
+  class: "awk-major"

@@ -1,3 +1,4 @@
+replicaCount: 0
 mastodon:
   endpoint:
     accounts: "https://hachyderm.io/api/v1/accounts"
@@ -8,3 +9,5 @@ queue:
     name: "int-mastodon-hachyderm-io"
   interestsUpdated:
     name: "int-mastodon-hachyderm-io"
+priority:
+  class: "awk-major"

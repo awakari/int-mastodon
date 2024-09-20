@@ -1,3 +1,4 @@
+replicaCount: 0
 mastodon:
   endpoint:
     accounts: "https://c.im/api/v1/accounts"
@@ -8,3 +9,5 @@ queue:
     name: "int-mastodon-c-im"
   interestsUpdated:
     name: "int-mastodon-c-im"
+priority:
+  class: "awk-major"

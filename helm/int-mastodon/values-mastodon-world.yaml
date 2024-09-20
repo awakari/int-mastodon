@@ -8,3 +8,5 @@ queue:
     name: "int-mastodon-mastodon-world"
   interestsUpdated:
     name: "int-mastodon-mastodon-world"
+priority:
+  class: "awk-major"
