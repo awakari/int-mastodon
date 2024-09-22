@@ -250,9 +250,9 @@ func (m mastodon) handleLiveStreamEvent(ctx context.Context, ssEvt *sse.Event) {
 			return
 		}
 
-		addr := acc.Uri
+		addr := acc.Url
 		if addr == "" {
-			addr = acc.Url
+			addr = acc.Uri
 		}
 		switch {
 		case acc.Locked:
