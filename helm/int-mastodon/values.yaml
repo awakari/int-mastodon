@@ -76,17 +76,6 @@ nodeSelector: {}
 
 tolerations: []
 
-affinity:
-  nodeAffinity:
-    preferredDuringSchedulingIgnoredDuringExecution:
-      - weight: 1
-        preference:
-          matchExpressions:
-            - key: spot
-              operator: In
-              values:
-                - "true"
-
 api:
   activitypub:
     host: "activitypub.awakari.com"
@@ -96,6 +85,9 @@ api:
   writer:
     backoff: "10s"
     batchSize: 16
+    cache:
+      size: 100
+      ttl: "24h"
     uri: "api:50051"
 log:
   # https://pkg.go.dev/golang.org/x/exp/slog#Level

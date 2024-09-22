@@ -11,7 +11,8 @@ type Config struct {
 		Writer struct {
 			Backoff   time.Duration `envconfig:"API_WRITER_BACKOFF" default:"10s" required:"true"`
 			BatchSize uint32        `envconfig:"API_WRITER_BATCH_SIZE" default:"16" required:"true"`
-			Uri       string        `envconfig:"API_WRITER_URI" default:"resolver:50051" required:"true"`
+			Cache     WriterCacheConfig
+			Uri       string `envconfig:"API_WRITER_URI" default:"resolver:50051" required:"true"`
 		}
 		Event struct {
 			Type string `envconfig:"API_EVENT_TYPE" required:"true" default:"com_awakari_mastodon_v1"`
@@ -26,6 +27,11 @@ type Config struct {
 	Log struct {
 		Level int `envconfig:"LOG_LEVEL" default:"-4" required:"true"`
 	}
+}
+
+type WriterCacheConfig struct {
+	Size uint32        `envconfig:"API_WRITER_CACHE_SIZE" default:"100" required:"true"`
+	Ttl  time.Duration `envconfig:"API_WRITER_CACHE_TTL" default:"24h" required:"true"`
 }
 
 type MastodonConfig struct {
