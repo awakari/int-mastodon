@@ -9,3 +9,5 @@ queue:
     name: "int-mastodon-c-im"
   interestsUpdated:
     name: "int-mastodon-c-im"
+  sourceSse:
+    name: "int-mastodon-c-im"

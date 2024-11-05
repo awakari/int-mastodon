@@ -11,3 +11,5 @@ queue:
     name: "int-mastodon-infosec-exchange"
   interestsUpdated:
     name: "int-mastodon-infosec-exchange"
+  sourceSse:
+    name: "int-mastodon-infosec-exchange"

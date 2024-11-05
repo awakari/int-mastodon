@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"github.com/awakari/int-mastodon/model"
+	"github.com/cloudevents/sdk-go/binding/format/protobuf/v2/pb"
 )
 
 type mock struct {
@@ -16,6 +17,6 @@ func (m mock) SearchAndAdd(ctx context.Context, subId, groupId, q string, limit 
 	return 42, nil
 }
 
-func (m mock) HandleLiveStream(ctx context.Context) (err error) {
+func (m mock) HandleLiveStreamEvents(ctx context.Context, evts []*pb.CloudEvent) {
 	return
 }

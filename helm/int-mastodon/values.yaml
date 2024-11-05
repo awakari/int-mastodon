@@ -116,3 +116,7 @@ queue:
     batchSize: 1
     name: "int-mastodon"
     subj: "interests-updated"
+  sourceSse:
+    batchSize: 100
+    name: "int-mastodon"
+    subj: "source-sse-mastodon"

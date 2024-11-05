@@ -10,7 +10,6 @@ import (
 	"github.com/awakari/int-mastodon/model"
 	"github.com/awakari/int-mastodon/service/writer"
 	"github.com/cloudevents/sdk-go/binding/format/protobuf/v2/pb"
-	"github.com/r3labs/sse/v2"
 	"github.com/segmentio/ksuid"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"io"
@@ -18,12 +17,11 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
-	"time"
 )
 
 type Service interface {
 	SearchAndAdd(ctx context.Context, interestId, groupId, q string, limit uint32, typ model.SearchType) (n uint32, err error)
-	HandleLiveStream(ctx context.Context) (err error)
+	HandleLiveStreamEvents(ctx context.Context, evts []*pb.CloudEvent)
 }
 
 type mastodon struct {
@@ -184,89 +182,65 @@ func (m mastodon) follow(ctx context.Context, acc model.Account) (err error) {
 	return
 }
 
-func (m mastodon) HandleLiveStream(ctx context.Context) (err error) {
-	clientSse := sse.NewClient(m.cfg.Endpoint.Stream)
-	clientSse.Headers["Authorization"] = "Bearer " + m.cfg.Client.Token
-	clientSse.Headers["User-Agent"] = m.userAgent
-	chSsEvts := make(chan *sse.Event)
-	err = clientSse.SubscribeChanWithContext(ctx, "", chSsEvts)
-	if err == nil {
-		defer clientSse.Unsubscribe(chSsEvts)
-		for {
-			select {
-			case ssEvt := <-chSsEvts:
-				m.handleLiveStreamEvent(ctx, ssEvt)
-			case <-ctx.Done():
-				err = ctx.Err()
-			case <-time.After(m.cfg.StreamTimeoutMax):
-				err = fmt.Errorf("timeout while wating for new stream status")
-			}
+func (m mastodon) HandleLiveStreamEvents(ctx context.Context, evts []*pb.CloudEvent) {
+	for _, evt := range evts {
+		if "update" == string(evt.Type) {
+			var st model.Status
+			err := json.Unmarshal(evt.GetBinaryData(), &st)
 			if err != nil {
-				break
+				fmt.Printf("failed to unmarshal the live stream event data: %s\nerror: %s\n", string(evt.GetBinaryData()), err)
 			}
-		}
-	}
-	return
-}
 
-func (m mastodon) handleLiveStreamEvent(ctx context.Context, ssEvt *sse.Event) {
-	if "update" == string(ssEvt.Event) {
-
-		var st model.Status
-		err := json.Unmarshal(ssEvt.Data, &st)
-		if err != nil {
-			fmt.Printf("failed to unmarshal the live stream event data: %s\nerror: %s\n", string(ssEvt.Data), err)
-		}
-
-		// do not proceed if either of below conditions is true
-		if st.Sensitive {
-			return
-		}
-		if st.Visibility != "public" {
-			return
-		}
-		acc := st.Account
-		if !acc.Discoverable {
-			return
-		}
-		if acc.Noindex {
-			return
-		}
-		for _, t := range st.Tags {
-			if strings.ToLower(t.Name) == tagNoBot {
+			// do not proceed if either of below conditions is true
+			if st.Sensitive {
 				return
 			}
-		}
-		for _, t := range acc.Tags {
-			if strings.ToLower(t.Name) == tagNoBot {
+			if st.Visibility != "public" {
 				return
 			}
-		}
+			acc := st.Account
+			if !acc.Discoverable {
+				return
+			}
+			if acc.Noindex {
+				return
+			}
+			for _, t := range st.Tags {
+				if strings.ToLower(t.Name) == tagNoBot {
+					return
+				}
+			}
+			for _, t := range acc.Tags {
+				if strings.ToLower(t.Name) == tagNoBot {
+					return
+				}
+			}
 
-		if acc.FollowersCount < m.cfg.CountMin.Followers {
-			return
-		}
-		if acc.StatusesCount < m.cfg.CountMin.Posts {
-			return
-		}
+			if acc.FollowersCount < m.cfg.CountMin.Followers {
+				return
+			}
+			if acc.StatusesCount < m.cfg.CountMin.Posts {
+				return
+			}
 
-		addr := acc.Url
-		if addr == "" {
-			addr = acc.Uri
-		}
-		switch {
-		case acc.Locked:
-			// able to accept the follow request manually
+			addr := acc.Url
 			if addr == "" {
-				addr = acc.Acct
+				addr = acc.Uri
 			}
-			_ = m.svcAp.Create(ctx, addr, groupIdDefault, addr, "", "")
-		case acc.Indexable == nil || *acc.Indexable == true:
-			// account allows explicitly to consume their posts
-			evtAwk := m.convertStatus(st, addr)
-			err = m.w.Write(context.TODO(), evtAwk, groupIdDefault, addr)
-			if err != nil {
-				fmt.Printf("failed to submit the live stream event, id=%s, src=%s, err=%s\n", evtAwk.Id, addr, err)
+			switch {
+			case acc.Locked:
+				// able to accept the follow request manually
+				if addr == "" {
+					addr = acc.Acct
+				}
+				_ = m.svcAp.Create(ctx, addr, groupIdDefault, addr, "", "")
+			case acc.Indexable == nil || *acc.Indexable == true:
+				// account allows explicitly to consume their posts
+				evtAwk := m.convertStatus(st, addr)
+				err = m.w.Write(context.TODO(), evtAwk, groupIdDefault, addr)
+				if err != nil {
+					fmt.Printf("failed to submit the live stream event, id=%s, src=%s, err=%s\n", evtAwk.Id, addr, err)
+				}
 			}
 		}
 	}

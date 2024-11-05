@@ -9,3 +9,5 @@ queue:
     name: "int-mastodon-hachyderm-io"
   interestsUpdated:
     name: "int-mastodon-hachyderm-io"
+  sourceSse:
+    name: "int-mastodon-hachyderm-io"

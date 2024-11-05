@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/awakari/int-mastodon/model"
+	"github.com/cloudevents/sdk-go/binding/format/protobuf/v2/pb"
 	"log/slog"
 )
 
@@ -25,10 +26,9 @@ func (l logging) SearchAndAdd(ctx context.Context, subId, groupId, q string, lim
 	return
 }
 
-func (l logging) HandleLiveStream(ctx context.Context) (err error) {
-	l.log.Log(context.TODO(), logLevel(err), fmt.Sprintf("service.HandleLiveStream(): started"))
-	err = l.svc.HandleLiveStream(ctx)
-	l.log.Log(context.TODO(), logLevel(err), fmt.Sprintf("service.HandleLiveStream(): done, err=%s", err))
+func (l logging) HandleLiveStreamEvents(ctx context.Context, evts []*pb.CloudEvent) {
+	l.svc.HandleLiveStreamEvents(ctx, evts)
+	l.log.Debug(fmt.Sprintf("service.HandleLiveStreamEvents(%d)", len(evts)))
 	return
 }
 

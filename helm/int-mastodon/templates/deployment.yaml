@@ -96,6 +96,12 @@ spec:
               value: "{{ .Values.queue.interestsUpdated.name }}"
             - name: API_QUEUE_INTERESTS_UPDATED_SUBJ
               value: "{{ .Values.queue.interestsUpdated.subj }}"
+            - name: API_QUEUE_SRC_SSE_BATCH_SIZE
+              value: "{{ .Values.queue.sourceSse.batchSize }}"
+            - name: API_QUEUE_SRC_SSE_NAME
+              value: "{{ .Values.queue.sourceSse.name }}"
+            - name: API_QUEUE_SRC_SSE_SUBJ
+              value: "{{ .Values.queue.sourceSse.subj }}"
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"

@@ -11,3 +11,5 @@ queue:
     name: "int-mastodon-flipboard-social"
   interestsUpdated:
     name: "int-mastodon-flipboard-social"
+  sourceSse:
+    name: "int-mastodon-flipboard-social"

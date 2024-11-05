@@ -64,15 +64,6 @@ func main() {
 	clientHttp := &http.Client{}
 	svc := service.NewService(clientHttp, cfg.Api.Mastodon.Client.UserAgent, cfg.Api.Mastodon, svcActivityPub, svcWriter, cfg.Api.Event.Type)
 	svc = service.NewServiceLogging(svc, log)
-	//
-	go func() {
-		for {
-			err = svc.HandleLiveStream(context.Background())
-			if err != nil {
-				panic(err)
-			}
-		}
-	}()
 
 	// init queues
 	connQueue, err := grpc.NewClient(cfg.Api.Queue.Uri, grpc.WithTransportCredentials(insecure.NewCredentials()))
@@ -83,6 +74,7 @@ func main() {
 	clientQueue := queue.NewServiceClient(connQueue)
 	svcQueue := queue.NewService(clientQueue)
 	svcQueue = queue.NewLoggingMiddleware(svcQueue, log)
+
 	err = svcQueue.SetConsumer(context.TODO(), cfg.Api.Queue.InterestsCreated.Name, cfg.Api.Queue.InterestsCreated.Subj)
 	if err != nil {
 		panic(err)
@@ -96,13 +88,16 @@ func main() {
 			cfg.Api.Queue.InterestsCreated.Name,
 			cfg.Api.Queue.InterestsCreated.Subj,
 			cfg.Api.Queue.InterestsCreated.BatchSize,
-			cfg,
 			log,
+			func(ctx context.Context, svc service.Service, evts []*pb.CloudEvent) {
+				consumeInterestEvents(ctx, svc, evts, cfg, log)
+			},
 		)
 		if err != nil {
 			panic(err)
 		}
 	}()
+
 	err = svcQueue.SetConsumer(context.TODO(), cfg.Api.Queue.InterestsUpdated.Name, cfg.Api.Queue.InterestsUpdated.Subj)
 	if err != nil {
 		panic(err)
@@ -116,8 +111,33 @@ func main() {
 			cfg.Api.Queue.InterestsUpdated.Name,
 			cfg.Api.Queue.InterestsUpdated.Subj,
 			cfg.Api.Queue.InterestsUpdated.BatchSize,
-			cfg,
 			log,
+			func(ctx context.Context, svc service.Service, evts []*pb.CloudEvent) {
+				consumeInterestEvents(ctx, svc, evts, cfg, log)
+			},
+		)
+		if err != nil {
+			panic(err)
+		}
+	}()
+
+	err = svcQueue.SetConsumer(context.TODO(), cfg.Api.Queue.SourceSse.Name, cfg.Api.Queue.SourceSse.Subj)
+	if err != nil {
+		panic(err)
+	}
+	log.Info(fmt.Sprintf("initialized the %s queue", cfg.Api.Queue.SourceSse.Name))
+	go func() {
+		err = consumeQueue(
+			context.Background(),
+			svc,
+			svcQueue,
+			cfg.Api.Queue.SourceSse.Name,
+			cfg.Api.Queue.SourceSse.Subj,
+			cfg.Api.Queue.SourceSse.BatchSize,
+			log,
+			func(ctx context.Context, svc service.Service, evts []*pb.CloudEvent) {
+				svc.HandleLiveStreamEvents(ctx, evts)
+			},
 		)
 		if err != nil {
 			panic(err)
@@ -137,12 +157,12 @@ func consumeQueue(
 	svcQueue queue.Service,
 	name, subj string,
 	batchSize uint32,
-	cfg config.Config,
 	log *slog.Logger,
+	consumeEvents func(ctx context.Context, svc service.Service, evts []*pb.CloudEvent),
 ) (err error) {
 	for {
 		err = svcQueue.ReceiveMessages(ctx, name, subj, batchSize, func(evts []*pb.CloudEvent) (err error) {
-			consumeEvents(ctx, svc, evts, cfg, log)
+			consumeEvents(ctx, svc, evts)
 			return
 		})
 		if err != nil {
@@ -151,14 +171,14 @@ func consumeQueue(
 	}
 }
 
-func consumeEvents(
+func consumeInterestEvents(
 	ctx context.Context,
 	svc service.Service,
 	evts []*pb.CloudEvent,
 	cfg config.Config,
 	log *slog.Logger,
 ) {
-	log.Debug(fmt.Sprintf("consumeEvents(%d))\n", len(evts)))
+	log.Debug(fmt.Sprintf("consumeInterestEvents(%d))\n", len(evts)))
 	for _, evt := range evts {
 
 		interestId := evt.GetTextData()
