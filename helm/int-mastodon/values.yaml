@@ -100,12 +100,11 @@ mastodon:
       followers: 123
       posts: 123
   endpoint:
-    accounts: "https://mastodon.social/api/v1/accounts"
-    search: "https://mastodon.social/api/v2/search"
-    stream: "https://streaming.mastodon.social/api/v1/streaming/public?remote=false&only_media=false"
-  userAgent: "Awakari"
-  stream:
-    timeout: "5m"
+    protocol: "https://"
+    accounts: "/api/v1/accounts"
+    search: "/api/v2/search"
+  client:
+    userAgent: "Awakari"
 queue:
   uri: "queue:50051"
   interestsCreated:

@@ -61,11 +61,11 @@ func (m mastodon) SearchAndAdd(ctx context.Context, interestId, groupId, q strin
 		reqQuery := "?q=" + url.QueryEscape(q) + "&type=" + typ.String() + "&resolve=true&offset=" + strconv.Itoa(int(n)) + "&limit=" + strconv.Itoa(int(limit-n))
 		var req *http.Request
 		var err error
-		req, err = http.NewRequestWithContext(ctx, http.MethodGet, m.cfg.Endpoint.Search+reqQuery, nil)
+		req, err = http.NewRequestWithContext(ctx, http.MethodGet, m.cfg.Endpoint.Protocol+host+m.cfg.Endpoint.Search+reqQuery, nil)
 		var resp *http.Response
 		if err == nil {
 			req.Header.Add("Accept", "application/json")
-			req.Header.Add("Authorization", "Bearer "+m.cfg.Client.Token)
+			req.Header.Add("Authorization", "Bearer "+m.cfg.Client.Tokens)
 			req.Header.Add("User-Agent", m.userAgent)
 			resp, err = m.clientHttp.Do(req)
 		}
@@ -157,11 +157,11 @@ func (m mastodon) processFoundAccount(ctx context.Context, acc model.Account, in
 
 func (m mastodon) follow(ctx context.Context, acc model.Account) (err error) {
 	var req *http.Request
-	req, err = http.NewRequestWithContext(ctx, http.MethodPost, m.cfg.Endpoint.Accounts+"/"+acc.Id+"/follow", nil)
+	req, err = http.NewRequestWithContext(ctx, http.MethodPost, m.cfg.Endpoints.Accounts+"/"+acc.Id+"/follow", nil)
 	var resp *http.Response
 	if err == nil {
 		req.Header.Add("Accept", "application/json")
-		req.Header.Add("Authorization", "Bearer "+m.cfg.Client.Token)
+		req.Header.Add("Authorization", "Bearer "+m.cfg.Client.Tokens)
 		req.Header.Add("User-Agent", m.userAgent)
 		resp, err = m.clientHttp.Do(req)
 	}

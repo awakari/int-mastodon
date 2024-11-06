@@ -36,20 +36,20 @@ type WriterCacheConfig struct {
 
 type MastodonConfig struct {
 	Client struct {
-		Key       string `envconfig:"API_MASTODON_CLIENT_KEY" required:"true"`
-		Secret    string `envconfig:"API_MASTODON_CLIENT_SECRET" required:"true"`
-		Token     string `envconfig:"API_MASTODON_CLIENT_TOKEN" required:"true"`
-		UserAgent string `envconfig:"API_MASTODON_USER_AGENT" default:"awakari" required:"true""`
+		Keys      []string `envconfig:"API_MASTODON_CLIENT_KEYS" required:"true"`
+		Secrets   []string `envconfig:"API_MASTODON_CLIENT_SECRETS" required:"true"`
+		Tokens    []string `envconfig:"API_MASTODON_CLIENT_TOKENS" required:"true"`
+		Hosts     []string `envconfig:"API_MASTODON_CLIENT_HOSTS" required:"true" default:"mastodon.social"`
+		UserAgent string   `envconfig:"API_MASTODON_CLIENT_USER_AGENT" default:"awakari" required:"true"`
 	}
-	Endpoint struct {
-		Accounts string `envconfig:"API_MASTODON_ENDPOINT_ACCOUNTS" default:"https://mastodon.social/api/v1/accounts" required:"true"`
-		Search   string `envconfig:"API_MASTODON_ENDPOINT_SEARCH" default:"https://mastodon.social/api/v2/search" required:"true"`
-		Stream   string `envconfig:"API_MASTODON_ENDPOINT_STREAM" default:"https://streaming.mastodon.social/api/v1/streaming/public?remote=false&only_media=false" required:"true"`
-	}
-	StreamTimeoutMax time.Duration `envconfig:"API_MASTODON_STREAM_TIMEOUT_MAX" default:"5m" required:"true"`
-	CountMin         struct {
+	CountMin struct {
 		Followers uint32 `envconfig:"API_MASTODON_COUNT_MIN_FOLLOWERS" default:"100" required:"true"`
 		Posts     uint32 `envconfig:"API_MASTODON_COUNT_MIN_POSTS" default:"1000" required:"true"`
+	}
+	Endpoint struct {
+		Protocol string `envconfig:"API_MASTODON_ENDPOINT_PROTOCOL" default:"https://" required:"true"`
+		Accounts string `envconfig:"API_MASTODON_ENDPOINT_ACCOUNTS" default:"/api/v1/accounts" required:"true"`
+		Search   string `envconfig:"API_MASTODON_ENDPOINT_SEARCH" default:"/api/v2/search" required:"true"`
 	}
 	Search struct {
 		Limit uint32 `envconfig:"API_MASTODON_SEARCH_LIMIT" default:"10" required:"true"`
