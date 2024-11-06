@@ -2,13 +2,13 @@ package service
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	ap "github.com/awakari/int-mastodon/api/grpc/int-activitypub"
 	"github.com/awakari/int-mastodon/config"
 	"github.com/awakari/int-mastodon/model"
 	"github.com/awakari/int-mastodon/service/writer"
+	"github.com/bytedance/sonic"
 	"github.com/cloudevents/sdk-go/binding/format/protobuf/v2/pb"
 	"github.com/segmentio/ksuid"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -41,77 +41,85 @@ const tagNoBot = "#nobot"
 func NewService(
 	clientHttp *http.Client,
 	userAgent string,
-	cfgMastodon config.MastodonConfig,
+	cfg config.MastodonConfig,
 	svcAp ap.Service,
 	w writer.Service,
 	typeCloudEvent string,
 ) Service {
+	if len(cfg.Client.Hosts) != len(cfg.Client.Tokens) {
+		panic(fmt.Sprintf("count of mastodon's hosts %d does not match the count of tokens %d", len(cfg.Client.Hosts), len(cfg.Client.Tokens)))
+	}
 	return mastodon{
 		clientHttp:     clientHttp,
 		userAgent:      userAgent,
-		cfg:            cfgMastodon,
+		cfg:            cfg,
 		svcAp:          svcAp,
 		w:              w,
 		typeCloudEvent: typeCloudEvent,
 	}
 }
 
-func (m mastodon) SearchAndAdd(ctx context.Context, interestId, groupId, q string, limit uint32, typ model.SearchType) (n uint32, errs error) {
-	for n < limit {
-		reqQuery := "?q=" + url.QueryEscape(q) + "&type=" + typ.String() + "&resolve=true&offset=" + strconv.Itoa(int(n)) + "&limit=" + strconv.Itoa(int(limit-n))
-		var req *http.Request
-		var err error
-		req, err = http.NewRequestWithContext(ctx, http.MethodGet, m.cfg.Endpoint.Search+reqQuery, nil)
-		var resp *http.Response
-		if err == nil {
-			req.Header.Add("Accept", "application/json")
-			req.Header.Add("Authorization", "Bearer "+m.cfg.Client.Token)
-			req.Header.Add("User-Agent", m.userAgent)
-			resp, err = m.clientHttp.Do(req)
-		}
-		var data []byte
-		if err == nil && resp != nil {
-			data, err = io.ReadAll(io.LimitReader(resp.Body, limitRespBodyLen))
-			_ = resp.Body.Close()
-		}
-		var results model.Results
-		if err == nil {
-			err = json.Unmarshal(data, &results)
-		}
-		if err != nil {
-			errs = errors.Join(errs, err)
-			break
-		}
-		if typ == model.SearchTypeStatuses {
-			countResults := len(results.Statuses)
-			if countResults == 0 {
+func (m mastodon) SearchAndAdd(ctx context.Context, interestId, groupId, q string, limit uint32, typ model.SearchType) (nTotal uint32, errs error) {
+	for i, host := range m.cfg.Client.Hosts {
+		tokenAuth := m.cfg.Client.Tokens[i]
+		var n uint32
+		for n < limit {
+			reqQuery := "?q=" + url.QueryEscape(q) + "&type=" + typ.String() + "&resolve=true&offset=" + strconv.Itoa(int(n)) + "&limit=" + strconv.Itoa(int(limit-n))
+			var req *http.Request
+			var err error
+			req, err = http.NewRequestWithContext(ctx, http.MethodGet, m.cfg.Endpoint.Protocol+host+m.cfg.Endpoint.Search+reqQuery, nil)
+			var resp *http.Response
+			if err == nil {
+				req.Header.Add("Accept", "application/json")
+				req.Header.Add("Authorization", "Bearer "+tokenAuth)
+				req.Header.Add("User-Agent", m.userAgent)
+				resp, err = m.clientHttp.Do(req)
+			}
+			var data []byte
+			if err == nil && resp != nil {
+				data, err = io.ReadAll(io.LimitReader(resp.Body, limitRespBodyLen))
+				_ = resp.Body.Close()
+			}
+			var results model.Results
+			if err == nil {
+				err = sonic.Unmarshal(data, &results)
+			}
+			if err != nil {
+				errs = errors.Join(errs, err)
 				break
 			}
-			n += uint32(countResults)
-			for _, st := range results.Statuses {
-				err = m.processFoundStatus(ctx, st, interestId, groupId, q)
-				if err != nil {
-					err = errors.Join(errs, err)
+			if typ == model.SearchTypeStatuses {
+				countResults := len(results.Statuses)
+				if countResults == 0 {
+					break
 				}
-			}
-		} else if typ == model.SearchTypeAccounts {
-			countResults := len(results.Accounts)
-			if countResults == 0 {
-				break
-			}
-			n += uint32(countResults)
-			for _, acc := range results.Accounts {
-				err = m.processFoundAccount(ctx, acc, interestId, groupId, q, false)
-				if err != nil {
-					errs = errors.Join(errs, err)
+				n += uint32(countResults)
+				for _, st := range results.Statuses {
+					err = m.processFoundStatus(ctx, host, tokenAuth, st, interestId, groupId, q)
+					if err != nil {
+						err = errors.Join(errs, err)
+					}
+				}
+			} else if typ == model.SearchTypeAccounts {
+				countResults := len(results.Accounts)
+				if countResults == 0 {
+					break
+				}
+				n += uint32(countResults)
+				for _, acc := range results.Accounts {
+					err = m.processFoundAccount(ctx, host, tokenAuth, acc, interestId, groupId, q, false)
+					if err != nil {
+						errs = errors.Join(errs, err)
+					}
 				}
 			}
 		}
+		nTotal += n
 	}
 	return
 }
 
-func (m mastodon) processFoundStatus(ctx context.Context, s model.Status, interestId, groupId, q string) (err error) {
+func (m mastodon) processFoundStatus(ctx context.Context, host, tokAuth string, s model.Status, interestId, groupId, q string) (err error) {
 	if s.Sensitive {
 		err = fmt.Errorf("found account %s skip due to sensitive flag", s.Account.Uri)
 	}
@@ -122,11 +130,11 @@ func (m mastodon) processFoundStatus(ctx context.Context, s model.Status, intere
 	if err == nil && acc.StatusesCount < m.cfg.CountMin.Followers {
 		err = fmt.Errorf("found account %s skip due low post count %d", acc.Uri, acc.StatusesCount)
 	}
-	err = m.processFoundAccount(ctx, acc, interestId, groupId, q, true)
+	err = m.processFoundAccount(ctx, host, tokAuth, acc, interestId, groupId, q, true)
 	return
 }
 
-func (m mastodon) processFoundAccount(ctx context.Context, acc model.Account, interestId, groupId, q string, delegateFollow bool) (err error) {
+func (m mastodon) processFoundAccount(ctx context.Context, host, tokAuth string, acc model.Account, interestId, groupId, q string, delegateFollow bool) (err error) {
 	if !acc.Discoverable {
 		err = fmt.Errorf("found account %s skip due to no explicit discoverable flag set", acc.Uri)
 	}
@@ -149,19 +157,19 @@ func (m mastodon) processFoundAccount(ctx context.Context, acc model.Account, in
 		case true:
 			err = m.svcAp.Create(ctx, acc.Uri, groupId, "", interestId, q)
 		default:
-			err = m.follow(ctx, acc)
+			err = m.follow(ctx, acc, host, tokAuth)
 		}
 	}
 	return
 }
 
-func (m mastodon) follow(ctx context.Context, acc model.Account) (err error) {
+func (m mastodon) follow(ctx context.Context, acc model.Account, host, tokAuth string) (err error) {
 	var req *http.Request
-	req, err = http.NewRequestWithContext(ctx, http.MethodPost, m.cfg.Endpoint.Accounts+"/"+acc.Id+"/follow", nil)
+	req, err = http.NewRequestWithContext(ctx, http.MethodPost, m.cfg.Endpoint.Protocol+host+m.cfg.Endpoint.Accounts+"/"+acc.Id+"/follow", nil)
 	var resp *http.Response
 	if err == nil {
 		req.Header.Add("Accept", "application/json")
-		req.Header.Add("Authorization", "Bearer "+m.cfg.Client.Token)
+		req.Header.Add("Authorization", "Bearer "+tokAuth)
 		req.Header.Add("User-Agent", m.userAgent)
 		resp, err = m.clientHttp.Do(req)
 	}
@@ -186,7 +194,7 @@ func (m mastodon) HandleLiveStreamEvents(ctx context.Context, evts []*pb.CloudEv
 	for _, evt := range evts {
 		if "update" == string(evt.Type) {
 			var st model.Status
-			err := json.Unmarshal(evt.GetBinaryData(), &st)
+			err := sonic.Unmarshal(evt.GetBinaryData(), &st)
 			if err != nil {
 				fmt.Printf("failed to unmarshal the live stream event data: %s\nerror: %s\n", string(evt.GetBinaryData()), err)
 			}

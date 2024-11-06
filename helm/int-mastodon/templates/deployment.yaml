@@ -51,37 +51,30 @@ spec:
               value: "{{ .Values.api.event.type }}"
             - name: LOG_LEVEL
               value: "{{ .Values.log.level }}"
-            - name: API_MASTODON_ENDPOINT_ACCOUNTS
-              value: "{{ .Values.mastodon.endpoint.accounts }}"
-            - name: API_MASTODON_ENDPOINT_SEARCH
-              value: "{{ .Values.mastodon.endpoint.search }}"
-            - name: API_MASTODON_ENDPOINT_STREAM
-              value: "{{ .Values.mastodon.endpoint.stream }}"
             - name: API_MASTODON_SEARCH_LIMIT
               value: "{{ .Values.mastodon.search.limit }}"
             - name: API_MASTODON_COUNT_MIN_FOLLOWERS
               value: "{{ .Values.mastodon.count.min.followers }}"
             - name: API_MASTODON_COUNT_MIN_POSTS
               value: "{{ .Values.mastodon.count.min.posts }}"
-            - name: API_MASTODON_USER_AGENT
-              value: "{{ .Values.mastodon.userAgent }}"
-            - name: API_MASTODON_STREAM_TIMEOUT_MAX
-              value: "{{ .Values.mastodon.stream.timeout }}"
-            - name: API_MASTODON_CLIENT_KEY
+            - name: API_MASTODON_CLIENT_USER_AGENT
+              value: "{{ .Values.mastodon.client.userAgent }}"
+            - name: API_MASTODON_ENDPOINT_PROTOCOL
+              value: "{{ .Values.mastodon.endpoint.protocol }}"
+            - name: API_MASTODON_ENDPOINT_ACCOUNTS
+              value: "{{ .Values.mastodon.endpoint.accounts }}"
+            - name: API_MASTODON_ENDPOINT_SEARCH
+              value: "{{ .Values.mastodon.endpoint.search }}"
+            - name: API_MASTODON_CLIENT_HOSTS
               valueFrom:
                 secretKeyRef:
                   name: "{{ include "int-mastodon.fullname" . }}-client"
-                  key: key
-            - name: API_MASTODON_CLIENT_SECRET
+                  key: hosts
+            - name: API_MASTODON_CLIENT_TOKENS
               valueFrom:
                 secretKeyRef:
                   name: "{{ include "int-mastodon.fullname" . }}-client"
-                  key: secret
-            - name: API_MASTODON_CLIENT_TOKEN
-              valueFrom:
-                secretKeyRef:
-                  name: "{{ include "int-mastodon.fullname" . }}-client"
-                  key: token
+                  key: tokens
             - name: API_QUEUE_URI
               value: "{{ .Values.queue.uri }}"
             - name: API_QUEUE_INTERESTS_CREATED_BATCH_SIZE

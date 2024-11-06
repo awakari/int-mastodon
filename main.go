@@ -88,7 +88,6 @@ func main() {
 			cfg.Api.Queue.InterestsCreated.Name,
 			cfg.Api.Queue.InterestsCreated.Subj,
 			cfg.Api.Queue.InterestsCreated.BatchSize,
-			log,
 			func(ctx context.Context, svc service.Service, evts []*pb.CloudEvent) {
 				consumeInterestEvents(ctx, svc, evts, cfg, log)
 			},
@@ -111,7 +110,6 @@ func main() {
 			cfg.Api.Queue.InterestsUpdated.Name,
 			cfg.Api.Queue.InterestsUpdated.Subj,
 			cfg.Api.Queue.InterestsUpdated.BatchSize,
-			log,
 			func(ctx context.Context, svc service.Service, evts []*pb.CloudEvent) {
 				consumeInterestEvents(ctx, svc, evts, cfg, log)
 			},
@@ -134,7 +132,6 @@ func main() {
 			cfg.Api.Queue.SourceSse.Name,
 			cfg.Api.Queue.SourceSse.Subj,
 			cfg.Api.Queue.SourceSse.BatchSize,
-			log,
 			func(ctx context.Context, svc service.Service, evts []*pb.CloudEvent) {
 				svc.HandleLiveStreamEvents(ctx, evts)
 			},
@@ -157,7 +154,6 @@ func consumeQueue(
 	svcQueue queue.Service,
 	name, subj string,
 	batchSize uint32,
-	log *slog.Logger,
 	consumeEvents func(ctx context.Context, svc service.Service, evts []*pb.CloudEvent),
 ) (err error) {
 	for {
