@@ -36,8 +36,6 @@ type WriterCacheConfig struct {
 
 type MastodonConfig struct {
 	Client struct {
-		Keys      []string `envconfig:"API_MASTODON_CLIENT_KEYS" required:"true"`
-		Secrets   []string `envconfig:"API_MASTODON_CLIENT_SECRETS" required:"true"`
 		Tokens    []string `envconfig:"API_MASTODON_CLIENT_TOKENS" required:"true"`
 		Hosts     []string `envconfig:"API_MASTODON_CLIENT_HOSTS" required:"true" default:"mastodon.social"`
 		UserAgent string   `envconfig:"API_MASTODON_CLIENT_USER_AGENT" default:"awakari" required:"true"`

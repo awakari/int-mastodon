@@ -70,16 +70,6 @@ spec:
                 secretKeyRef:
                   name: "{{ include "int-mastodon.fullname" . }}-client"
                   key: hosts
-            - name: API_MASTODON_CLIENT_KEYS
-              valueFrom:
-                secretKeyRef:
-                  name: "{{ include "int-mastodon.fullname" . }}-client"
-                  key: keys
-            - name: API_MASTODON_CLIENT_SECRETS
-              valueFrom:
-                secretKeyRef:
-                  name: "{{ include "int-mastodon.fullname" . }}-client"
-                  key: secrets
             - name: API_MASTODON_CLIENT_TOKENS
               valueFrom:
                 secretKeyRef:
