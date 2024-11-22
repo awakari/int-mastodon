@@ -17,6 +17,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type Service interface {
@@ -37,6 +38,7 @@ const limitRespBodyLen = 1_048_576
 const limitRespBodyLenErr = 1_024
 const groupIdDefault = "default"
 const tagNoBot = "#nobot"
+const ksuidEnthropyLenMax = 16
 
 func NewService(
 	clientHttp *http.Client,
@@ -256,8 +258,23 @@ func (m mastodon) HandleLiveStreamEvents(ctx context.Context, evts []*pb.CloudEv
 }
 
 func (m mastodon) convertStatus(st model.Status, src string) (evtAwk *pb.CloudEvent) {
+
+	enthropy := []byte(src)
+	switch {
+	case len(enthropy) < ksuidEnthropyLenMax:
+		for _ = range ksuidEnthropyLenMax - len(enthropy) {
+			enthropy = append(enthropy, 0)
+		}
+	case len(enthropy) > ksuidEnthropyLenMax:
+		enthropy = enthropy[:ksuidEnthropyLenMax]
+	}
+	id, err := ksuid.FromParts(time.Now(), enthropy)
+	if err != nil {
+		id = ksuid.New() // fallback
+	}
+
 	evtAwk = &pb.CloudEvent{
-		Id:          ksuid.New().String(),
+		Id:          id.String(),
 		Source:      src,
 		SpecVersion: model.CeSpecVersion,
 		Type:        m.typeCloudEvent,
