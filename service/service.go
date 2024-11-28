@@ -259,16 +259,24 @@ func (m mastodon) HandleLiveStreamEvents(ctx context.Context, evts []*pb.CloudEv
 
 func (m mastodon) convertStatus(st model.Status, src string) (evtAwk *pb.CloudEvent) {
 
-	enthropy := []byte(src)
+	entropy := []byte(src)
 	switch {
-	case len(enthropy) < ksuidEnthropyLenMax:
-		for _ = range ksuidEnthropyLenMax - len(enthropy) {
-			enthropy = append(enthropy, 0)
+	case len(entropy) < ksuidEnthropyLenMax:
+		for _ = range ksuidEnthropyLenMax - len(entropy) {
+			entropy = append(entropy, 0)
 		}
-	case len(enthropy) > ksuidEnthropyLenMax:
-		enthropy = enthropy[:ksuidEnthropyLenMax]
+	case len(entropy) > ksuidEnthropyLenMax:
+		entropy = entropy[:ksuidEnthropyLenMax]
 	}
-	id, err := ksuid.FromParts(time.Now(), enthropy)
+
+	t := time.Now().UTC()
+	tNanos := uint32(t.UnixNano() % int64(time.Second))
+	entropy[0] ^= byte(tNanos << 24) // most significant byte of tNanos
+	entropy[1] ^= byte(tNanos << 16)
+	entropy[2] ^= byte(tNanos << 8)
+	entropy[3] ^= byte(tNanos) // least significant byte of tNanos
+
+	id, err := ksuid.FromParts(t, entropy)
 	if err != nil {
 		id = ksuid.New() // fallback
 	}
@@ -294,10 +302,14 @@ func (m mastodon) convertStatus(st model.Status, src string) (evtAwk *pb.CloudEv
 			TextData: st.Content,
 		},
 	}
-	if st.Language != "" {
+	if st.Language != "" && len(st.Language) > 1 {
+		lang := strings.ToLower(st.Language)
+		if len(lang) > 2 {
+			lang = lang[:2]
+		}
 		evtAwk.Attributes["language"] = &pb.CloudEventAttributeValue{
 			Attr: &pb.CloudEventAttributeValue_CeString{
-				CeString: st.Language,
+				CeString: lang,
 			},
 		}
 	}
