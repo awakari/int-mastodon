@@ -5,9 +5,9 @@ import (
 	"errors"
 	"fmt"
 	ap "github.com/awakari/int-mastodon/api/grpc/int-activitypub"
+	"github.com/awakari/int-mastodon/api/http/pub"
 	"github.com/awakari/int-mastodon/config"
 	"github.com/awakari/int-mastodon/model"
-	"github.com/awakari/int-mastodon/service/writer"
 	"github.com/bytedance/sonic"
 	"github.com/cloudevents/sdk-go/binding/format/protobuf/v2/pb"
 	"github.com/segmentio/ksuid"
@@ -30,7 +30,7 @@ type mastodon struct {
 	userAgent      string
 	cfg            config.MastodonConfig
 	svcAp          ap.Service
-	w              writer.Service
+	svcPub         pub.Service
 	typeCloudEvent string
 }
 
@@ -45,7 +45,7 @@ func NewService(
 	userAgent string,
 	cfg config.MastodonConfig,
 	svcAp ap.Service,
-	w writer.Service,
+	svcPub pub.Service,
 	typeCloudEvent string,
 ) Service {
 	if len(cfg.Client.Hosts) != len(cfg.Client.Tokens) {
@@ -56,7 +56,7 @@ func NewService(
 		userAgent:      userAgent,
 		cfg:            cfg,
 		svcAp:          svcAp,
-		w:              w,
+		svcPub:         svcPub,
 		typeCloudEvent: typeCloudEvent,
 	}
 }
@@ -247,7 +247,7 @@ func (m mastodon) HandleLiveStreamEvents(ctx context.Context, evts []*pb.CloudEv
 			case acc.Indexable == nil || *acc.Indexable == true:
 				// account allows explicitly to consume their posts
 				evtAwk := m.convertStatus(st, addr)
-				err = m.w.Write(context.TODO(), evtAwk, groupIdDefault, addr)
+				err = m.svcPub.Publish(context.TODO(), evtAwk, groupIdDefault, addr)
 				if err != nil {
 					fmt.Printf("failed to submit the live stream event, id=%s, src=%s, err=%s\n", evtAwk.Id, addr, err)
 				}

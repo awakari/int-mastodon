@@ -3,14 +3,13 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/awakari/client-sdk-go/api"
 	apiGrpc "github.com/awakari/int-mastodon/api/grpc"
 	apiGrpcAp "github.com/awakari/int-mastodon/api/grpc/int-activitypub"
 	"github.com/awakari/int-mastodon/api/grpc/queue"
+	"github.com/awakari/int-mastodon/api/http/pub"
 	"github.com/awakari/int-mastodon/config"
 	"github.com/awakari/int-mastodon/model"
 	"github.com/awakari/int-mastodon/service"
-	"github.com/awakari/int-mastodon/service/writer"
 	"github.com/cloudevents/sdk-go/binding/format/protobuf/v2/pb"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -37,18 +36,10 @@ func main() {
 	}
 	log := slog.New(slog.NewTextHandler(os.Stdout, &opts))
 	log.Info("starting the update for the feeds")
-	//
-	var clientAwk api.Client
-	clientAwk, err = api.
-		NewClientBuilder().
-		WriterUri(cfg.Api.Writer.Uri).
-		Build()
-	if err != nil {
-		panic(fmt.Sprintf("failed to initialize the Awakari API client: %s", err))
-	}
-	defer clientAwk.Close()
+
+	svcPub := pub.NewService(http.DefaultClient, cfg.Api.Writer.Uri, cfg.Api.Token.Internal)
+	svcPub = pub.NewLogging(svcPub, log)
 	log.Info("initialized the Awakari API client")
-	//
 	connAp, err := grpc.NewClient(cfg.Api.ActivityPub.Uri, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		panic(err)
@@ -57,12 +48,9 @@ func main() {
 	clientAp := apiGrpcAp.NewServiceClient(connAp)
 	svcActivityPub := apiGrpcAp.NewService(clientAp)
 	svcActivityPub = apiGrpcAp.NewServiceLogging(svcActivityPub, log)
-	//
-	svcWriter := writer.NewService(clientAwk, cfg.Api.Writer.Backoff, cfg.Api.Writer.Cache, log)
-	svcWriter = writer.NewLogging(svcWriter, log)
-	//
+
 	clientHttp := &http.Client{}
-	svc := service.NewService(clientHttp, cfg.Api.Mastodon.Client.UserAgent, cfg.Api.Mastodon, svcActivityPub, svcWriter, cfg.Api.Event.Type)
+	svc := service.NewService(clientHttp, cfg.Api.Mastodon.Client.UserAgent, cfg.Api.Mastodon, svcActivityPub, svcPub, cfg.Api.Event.Type)
 	svc = service.NewServiceLogging(svc, log)
 
 	// init queues

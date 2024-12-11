@@ -1,7 +1,8 @@
-package writer
+package pub
 
 import (
 	"context"
+	"errors"
 	"github.com/cloudevents/sdk-go/binding/format/protobuf/v2/pb"
 )
 
@@ -12,14 +13,12 @@ func NewMock() Service {
 	return mock{}
 }
 
-func (m mock) Close() error {
-	return nil
-}
-
-func (m mock) Write(ctx context.Context, evt *pb.CloudEvent, groupId, userId string) (err error) {
+func (m mock) Publish(ctx context.Context, evt *pb.CloudEvent, groupId, userId string) (err error) {
 	switch userId {
 	case "fail":
-		err = ErrWrite
+		err = errors.New("fail")
+	case "noack":
+		err = ErrNoAck
 	}
 	return
 }

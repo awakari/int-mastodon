@@ -16,6 +16,7 @@ func TestConfig(t *testing.T) {
 	os.Setenv("API_KEY_PUBLIC", "xxx")
 	os.Setenv("API_KEY_PRIVATE", "yyy")
 	os.Setenv("API_MASTODON_CLIENT_TOKENS", "token1,token2")
+	os.Setenv("API_TOKEN_INTERNAL", "foo")
 	cfg, err := NewConfigFromEnv()
 	assert.Nil(t, err)
 	assert.Equal(t, 23*time.Hour, cfg.Api.Writer.Backoff)

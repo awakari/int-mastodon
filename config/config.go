@@ -9,10 +9,8 @@ type Config struct {
 	Api struct {
 		Port   uint16 `envconfig:"API_PORT" default:"50051" required:"true"`
 		Writer struct {
-			Backoff   time.Duration `envconfig:"API_WRITER_BACKOFF" default:"10s" required:"true"`
-			BatchSize uint32        `envconfig:"API_WRITER_BATCH_SIZE" default:"16" required:"true"`
-			Cache     WriterCacheConfig
-			Uri       string `envconfig:"API_WRITER_URI" default:"resolver:50051" required:"true"`
+			Backoff time.Duration `envconfig:"API_WRITER_BACKOFF" default:"10s" required:"true"`
+			Uri     string        `envconfig:"API_WRITER_URI" default:"http://pub:8080/v1" required:"true"`
 		}
 		Event struct {
 			Type string `envconfig:"API_EVENT_TYPE" required:"true" default:"com_awakari_mastodon_v1"`
@@ -23,6 +21,9 @@ type Config struct {
 		}
 		Mastodon MastodonConfig
 		Queue    QueueConfig
+		Token    struct {
+			Internal string `envconfig:"API_TOKEN_INTERNAL" required:"true"`
+		}
 	}
 	Log struct {
 		Level int `envconfig:"LOG_LEVEL" default:"-4" required:"true"`
