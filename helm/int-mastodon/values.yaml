@@ -84,6 +84,7 @@ api:
     type: "com_awakari_mastodon_v1"
   writer:
     backoff: "10s"
+    timeout: "10s"
     uri: "http://pub:8080/v1"
   token:
     internal:

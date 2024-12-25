@@ -37,7 +37,7 @@ func main() {
 	log := slog.New(slog.NewTextHandler(os.Stdout, &opts))
 	log.Info("starting the update for the feeds")
 
-	svcPub := pub.NewService(http.DefaultClient, cfg.Api.Writer.Uri, cfg.Api.Token.Internal)
+	svcPub := pub.NewService(http.DefaultClient, cfg.Api.Writer.Uri, cfg.Api.Token.Internal, cfg.Api.Writer.Timeout)
 	svcPub = pub.NewLogging(svcPub, log)
 	log.Info("initialized the Awakari API client")
 	connAp, err := grpc.NewClient(cfg.Api.ActivityPub.Uri, grpc.WithTransportCredentials(insecure.NewCredentials()))

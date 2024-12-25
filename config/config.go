@@ -10,6 +10,7 @@ type Config struct {
 		Port   uint16 `envconfig:"API_PORT" default:"50051" required:"true"`
 		Writer struct {
 			Backoff time.Duration `envconfig:"API_WRITER_BACKOFF" default:"10s" required:"true"`
+			Timeout time.Duration `envconfig:"API_WRITER_TIMEOUT" default:"10s" required:"true"`
 			Uri     string        `envconfig:"API_WRITER_URI" default:"http://pub:8080/v1" required:"true"`
 		}
 		Event struct {
@@ -28,11 +29,6 @@ type Config struct {
 	Log struct {
 		Level int `envconfig:"LOG_LEVEL" default:"-4" required:"true"`
 	}
-}
-
-type WriterCacheConfig struct {
-	Size uint32        `envconfig:"API_WRITER_CACHE_SIZE" default:"100" required:"true"`
-	Ttl  time.Duration `envconfig:"API_WRITER_CACHE_TTL" default:"24h" required:"true"`
 }
 
 type MastodonConfig struct {

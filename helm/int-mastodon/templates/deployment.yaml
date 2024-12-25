@@ -35,6 +35,8 @@ spec:
               value: "{{ .Values.service.port }}"
             - name: API_WRITER_BACKOFF
               value: "{{ .Values.api.writer.backoff }}"
+            - name: API_WRITER_TIMEOUT
+              value: "{{ .Values.api.writer.timeout }}"
             - name: API_WRITER_URI
               value: "{{ .Values.api.writer.uri }}"
             - name: API_ACTIVITYPUB_HOST
